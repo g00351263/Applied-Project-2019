@@ -27,6 +27,9 @@ function startGame() {
     var toRender = function () { // draw the scene //
 
         tank.move(); // tank movement function
+        var heroDude = scene.getMeshByName("heroDude");
+        if (heroDude)
+            heroDude.move();
         scene.render();
     }
 
@@ -48,19 +51,7 @@ var createScene = function () {
     scene.activeCamera = followCamera; // active following camera
 
     createLights(scene);
-
-    ///////////importing dude//////
-
-    BABYLON.SceneLoader.ImportMesh("him", "Dude/", "dude.babylon", scene, onDudeImported);
-
-    function onDudeImported(newMeshes, particleSystems, skeletons) {
-
-
-        newMeshes[0].position = new BABYLON.Vector3(0, 0, 5);  // The original dude
-        scene.beginAnimation(skeletons[0], 0, 120, 1.0, true);
-
-    }
-    ///////////////////
+    createHeroDude(scene);
 
     return scene;
 };
@@ -172,19 +163,29 @@ function createTank(scene) {
     return tank;
 }
 
+function createHeroDude(scene)
+{
 
+    ///////////importing dude//////
 
+    BABYLON.SceneLoader.ImportMesh("him", "Dude/", "dude.babylon", scene, onDudeImported);
 
-
-
-
-
-
-
-
-
-
-
+    function onDudeImported(newMeshes, particleSystems, skeletons) {
+        newMeshes[0].position = new BABYLON.Vector3(0, 0, 5);  // The original dude
+        newMeshes[0].name = "heroDude";
+        var heroDude = newMeshes[0];
+        heroDude.scaling = new BABYLON.Vector3(0.2, 0.2, 0.2);
+        scene.beginAnimation(skeletons[0], 0, 120, true, 1.0);
+        heroDude.move = function () {
+            var tank = scene.getMeshByName("HeroTank");
+            var direction = tank.position.subtract(this.position);
+            var dir = direction.normalize();
+            var alpha = Math.atan2(-1 * dir.x, -1 * dir.z);
+            this.rotation.y = alpha;
+        }
+    }
+    ///////////////////
+}
 
 /// mouse click move arround full screen and escape button//
 function modifySettings() {
