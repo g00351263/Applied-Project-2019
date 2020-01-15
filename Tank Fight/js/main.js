@@ -1,6 +1,7 @@
-﻿/// <reference path="babylon.max.js" /> 
+﻿/// <reference path="babylon.max.js"/> 
+/// <reference path="cannon.js"/>
 // above helps autocomplete //
-
+//start python http server = python -m http.server//
 var canvas;
 var engine;
 var scene; // contains all object on screen //
@@ -10,8 +11,41 @@ var isWPressed = false;
 var isDPressed = false;
 var isSPressed = false;
 var isAPressed = false;
+var isBPressed = false; //fire//
+
 document.addEventListener("DOMContentLoaded", startGame); // when html page loaded start function //
 
+//class to make dude objects//
+class Dude {
+    //default constructor for dude//
+    constructor(dudeMesh, speed) {
+        this.dudeMesh = dudeMesh;
+        dudeMesh.Dude = this;
+        if (speed) {
+            this.speed = speed;
+        }
+        else {
+            this.speed = 1;
+        }
+    }
+    // end default constructor//
+
+    //function to move dude//
+    move() {
+        var tank = scene.getMeshByName("HeroTank");
+        var direction = tank.position.subtract(this.dudeMesh.position);
+        var distance = direction.length(); // distance between dude and tank //
+        var dir = direction.normalize();
+        var alpha = Math.atan2(-1 * dir.x, -1 * dir.z);
+        this.dudeMesh.rotation.y = alpha;
+        if (distance > 30) {
+            this.dudeMesh.moveWithCollisions(dir.multiplyByFloats(this.speed, this.speed, this.speed));
+
+        }
+    }
+    //end move function//
+}
+// ends dude class//
 
 // start game function //
 function startGame() {
@@ -27,9 +61,9 @@ function startGame() {
     var toRender = function () { // draw the scene //
 
         tank.move(); // tank movement function
-        var heroDude = scene.getMeshByName("heroDude");
-        if (heroDude)
-            heroDude.move();
+        tank.fire();
+        moveHeroDude();
+        moveOtherDudes();
         scene.render();
     }
 
@@ -40,7 +74,7 @@ function startGame() {
 // majority of work here creating all objects //
 var createScene = function () {
     var scene = new BABYLON.Scene(engine); // draw this scene ///
-
+    scene.enablePhysics(); // enabling physics from cannon.js
     var ground = CreateGround(scene);
 
     var freeCamera = createFreeCamera(scene);
@@ -68,6 +102,8 @@ function CreateGround(scene) {
         groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
         ground.material = groundMaterial;
         ground.checkCollisions = true; // check collision happening //
+        ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground,
+            BABYLON.PhysicsImpostor.HeightmapImpostor, { mass: 0 }, scene);
     }
     return ground;
 }
@@ -83,7 +119,7 @@ function createLights(scene) {
 function createFreeCamera(scene) {
     var camera = new BABYLON.FreeCamera("freeCamera", new BABYLON.Vector3(0, 0, 0), scene);
     camera.attachControl(canvas);
-    camera.position.y = 50;
+    camera.position.y = 150;
     camera.checkCollisions = true;
     camera.applyGravity = true;
  
@@ -99,17 +135,13 @@ function createFreeCamera(scene) {
     return camera;
 }
 
-// when resize your browser resize the engne //
-window.addEventListener("resize", function () {
-    engine.resize();
-});
 
 
 // following object camera //
 function createFollowCamera(scene, target) {
 
     var camera = new BABYLON.FollowCamera("tankFollowCamera", target.position, scene, target);
-    camera.radius = 20; // how far from object follow//
+    camera.radius = 60; // how far from object follow//
     camera.heightOffset = 4; // how high above the object to place camera //
     camera.rotationOffset = 180; // the viewing angle //
     camera.cameraAccelration = 0.5; // fast to move //
@@ -160,11 +192,32 @@ function createTank(scene) {
             tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y));
         }
     }
+    tank.fire = function () {
+        if (!isBPressed) return;
+
+        var cannonBall = new BABYLON.Mesh.CreateSphere("cannonBall", 32, 2, scene);
+        cannonBall.material = new BABYLON.StandardMaterial("Fire", scene);
+        cannonBall.material.diffuseTexture = new BABYLON.Texture("images/Fire.jpg", scene);
+
+        var tank = this;
+
+        var pos = tank.position;
+
+        cannonBall.position = new BABYLON.Vector3(pos.x, pos.y + 1, pos.z);
+        cannonBall.position.addInPlace(tank.frontVector.multiplyByFloats(5,5,5));
+
+        cannonBall.physicsImpostor = new BABYLON.PhysicsImpostor(cannonBall, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1.5 }, scene);
+
+        var fVector = tank.frontVector;
+
+        var force = new BABYLON.Vector3(fVector.x * 100, (fVector.y+0.01) * 100, fVector.z*100);
+
+        cannonBall.physicsImpostor.applyImpulse(force,cannonBall.getAbsolutePosition());
+    }
     return tank;
 }
 
-function createHeroDude(scene)
-{
+function createHeroDude(scene) {
 
     ///////////importing dude//////
 
@@ -177,21 +230,80 @@ function createHeroDude(scene)
         heroDude.scaling = new BABYLON.Vector3(0.2, 0.2, 0.2);
         heroDude.speed = 2;
         scene.beginAnimation(skeletons[0], 0, 120, true, 1.0);
-        heroDude.move = function () {
-            var tank = scene.getMeshByName("HeroTank");
-            var direction = tank.position.subtract(this.position);
-            var distance = direction.length(); // distance between dude and tank //
-            var dir = direction.normalize();
-            var alpha = Math.atan2(-1 * dir.x, -1 * dir.z);
-            this.rotation.y = alpha;
-            if (distance > 30) {
-                this.moveWithCollisions(dir.multiplyByFloats(this.speed, this.speed, this.speed));
 
-            }
+        var hero = new Dude(heroDude, 2);
+
+        scene.dudes = [];
+
+        for (var q=0; q<10; q++) {
+            scene.dudes[q] = DoClone(heroDude, skeletons, q);
+            scene.beginAnimation(scene.dudes[q].skeleton, 0, 120, true, 1.0);
+            var temp = new Dude(scene.dudes[q], 2);
+            console.log(scene.dudes[q].skeleton); 
         }
     }
     ///////////////////
 }
+
+function DoClone(original, skeletons, id) {
+    var myClone;
+    var xrand = Math.floor(Math.random() * 501) - 250;
+    var zrand = Math.floor(Math.random() * 501) - 250;
+
+    myClone = original.clone("clone_" + id);
+    myClone.position = new BABYLON.Vector3(xrand, 0, zrand);
+
+    if (!skeletons) {
+        return myClone;
+    }
+    else {
+        if (!original.getChildren()) {
+            myClone.skeleton = skeletons[0].clone("clone_" + id + "_skeleton");
+            return myClone;
+        }
+        else {
+            if (skeletons.length == 1)// this means one skeleton controlling animating all the children
+            {
+                var clonedSkeleton = skeletons[0].clone("clone_" + id + "_skeleton");
+                myClone.skeleton = clonedSkeleton;
+                var numChildren = myClone.getChildren().length;
+                for (var i = 0; i < numChildren; i++) {
+                    myClone.getChildren()[i].skeleton = clonedSkeleton;
+                }
+                return myClone;
+            }
+
+            //most probably each child has its own skeleton
+            else if (skeletons.length == original.getChildren().length) {
+                for (var i = 0; i < myClone.getChildren().length; i++) {
+                    myclone.getChildren()[i].skeleton = skeletons[i].clone("clone_" + id + "_skeleton_"+i);
+                }
+                return myClone;
+            }
+        }
+    }
+
+    return myClone;
+}
+
+function moveHeroDude() {
+    var heroDude = scene.getMeshByName("heroDude");
+    if (heroDude)
+        heroDude.Dude.move();
+}
+function moveOtherDudes() {
+    if (scene.dudes) {
+        for (var q = 0; q < scene.dudes.length; q++) {
+            scene.dudes[q].Dude.move();
+        }
+    }
+}
+
+// when resize your browser resize the engne //
+window.addEventListener("resize", function () {
+    engine.resize();
+});
+
 
 /// mouse click move arround full screen and escape button//
 function modifySettings() {
@@ -242,6 +354,9 @@ document.addEventListener("keydown", function (event) {
     if (event.key == 'a' || event.key == 'A') {
         isAPressed = true;
     }
+    if (event.key == 'b' || event.key == 'B') {
+        isBPressed = true; // fire //
+    }
 });
 
 // if key is released //
@@ -257,5 +372,8 @@ document.addEventListener("keyup", function (event) {
     }
     if (event.key == 'a' || event.key == 'A') {
         isAPressed = false;
+    }
+    if (event.key == 'b' || event.key == 'B') {
+        isBPressed = false; // fire //
     }
 });
