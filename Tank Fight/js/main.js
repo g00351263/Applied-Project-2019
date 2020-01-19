@@ -192,14 +192,23 @@ function createTank(scene) {
             tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y));
         }
     }
+
+    //// cannon ball fire funcions
+    tank.canFire = true;
     tank.fire = function () {
-        if (!isBPressed) return;
-
-        var cannonBall = new BABYLON.Mesh.CreateSphere("cannonBall", 32, 2, scene);
-        cannonBall.material = new BABYLON.StandardMaterial("Fire", scene);
-        cannonBall.material.diffuseTexture = new BABYLON.Texture("images/Fire.jpg", scene);
-
         var tank = this;
+
+        if (!isBPressed) return;
+        if (!tank.canFire) return;
+        tank.canFire = false;
+
+        setTimeout(function () { // stop the tank for half second before firing another cannon//
+            tank.canFire = true;
+        }, 500);
+
+        var cannonBall = new BABYLON.Mesh.CreateSphere("cannonBall", 32, 2, scene); //create cannonball
+        cannonBall.material = new BABYLON.StandardMaterial("Fire", scene); // give cannon material
+        cannonBall.material.diffuseTexture = new BABYLON.Texture("images/Fire.jpg", scene); // give cannon imamge fire//
 
         var pos = tank.position;
 
@@ -212,7 +221,11 @@ function createTank(scene) {
 
         var force = new BABYLON.Vector3(fVector.x * 100, (fVector.y+0.01) * 100, fVector.z*100);
 
-        cannonBall.physicsImpostor.applyImpulse(force,cannonBall.getAbsolutePosition());
+        cannonBall.physicsImpostor.applyImpulse(force, cannonBall.getAbsolutePosition());
+
+        setTimeout(function () { // make ball disappear after 3 seconds//
+            cannonBall.dispose();
+        }, 3000)
     }
     return tank;
 }
