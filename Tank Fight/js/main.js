@@ -1,8 +1,13 @@
-﻿/// <reference path="babylon.max.js" />
+﻿//Authour: Raja Naseer Ahmed Khan
+//Project Gesture UI
+
+/// <reference path="babylon.max.js" />
 /// <reference path="cannon.js" />
 var canvas;
 var engine;
 var scene;
+
+//variables to store which key is pressed or not //
 var isWPressed = false;
 var isSPressed = false;
 var isAPressed = false;
@@ -11,6 +16,7 @@ var isBPressed = false;
 var isRPressed = false;
 document.addEventListener("DOMContentLoaded", startGame);
 
+//this is the class to create the object of animated character
 class Dude {
     constructor(dudeMesh, speed, id, scene, scaling) {
         this.dudeMesh = dudeMesh;
@@ -38,6 +44,7 @@ class Dude {
         this.bounder.dudeMesh = this.dudeMesh;
     }
 
+	// moving the character //
     move() {
 
         if (!this.bounder) return;
@@ -53,6 +60,7 @@ class Dude {
             this.bounder.moveWithCollisions(dir.multiplyByFloats(this.speed, this.speed, this.speed));
     }
 
+	//creating the transparent box around the character to detect collision and stop them from striking each others//
     createBoundingBox() {
         var lengthX = Dude.boundingBoxParameters.lengthX;
         var lengthY = Dude.boundingBoxParameters.lengthY;
@@ -122,6 +130,7 @@ class Dude {
 }
 
 
+// this starts game and render the all the elements in game //
 function startGame() {
     canvas = document.getElementById("renderCanvas");
     engine = new BABYLON.Engine(canvas, true);
@@ -153,6 +162,7 @@ var createScene = function () {
     return scene;
 };
 
+// this is creating the ground //
 function CreateGround(scene) {
     var ground = new BABYLON.Mesh.CreateGroundFromHeightMap("ground", "images/hmap1.png", 2000, 2000, 20, 0, 1000, scene, false, OnGroundCreated);
     console.log(ground);
@@ -167,11 +177,14 @@ function CreateGround(scene) {
     return ground;
 }
 
+// creating lights to make things visible//
 function createLights(scene) {
     var light0 = new BABYLON.DirectionalLight("dir0", new BABYLON.Vector3(-.1, -1, 0), scene);
     var light1 = new BABYLON.DirectionalLight("dir1", new BABYLON.Vector3(-1, -1, 0), scene);
 
 }
+
+//camera to view the games/scene//
 function createFreeCamera(scene) {
     var camera = new BABYLON.FreeCamera("freeCamera", new BABYLON.Vector3(0, 0, 0), scene);
     camera.attachControl(canvas);
@@ -190,6 +203,7 @@ function createFreeCamera(scene) {
     return camera;
 }
 
+//camera following the player //
 function createFollowCamera(scene, target) {
     var camera = new BABYLON.FollowCamera("tankFollowCamera", target.position, scene, target);
     camera.radius = 20; // how far from the object to follow
@@ -199,6 +213,8 @@ function createFollowCamera(scene, target) {
     camera.maxCameraSpeed = 5; // speed limit
     return camera;
 }
+
+// creating the tank //
 function createTank(scene) {
     var tank = new BABYLON.MeshBuilder.CreateBox("heroTank", { height: 1, depth: 6, width: 6 }, scene);
     var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
@@ -212,12 +228,14 @@ function createTank(scene) {
     tank.canFireLaser = true;
     //tank.isPickable = false;
 
+		// tank moving function //
     tank.move = function () {
         var yMovement = 0;
         if (tank.position.y > 2) {
             tank.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
         }
 
+		// move tank according to key press events//
         if (isWPressed) {
             tank.moveWithCollisions(tank.frontVector.multiplyByFloats(tank.speed, tank.speed, tank.speed));
         }
@@ -238,6 +256,7 @@ function createTank(scene) {
     }
 
 
+	// function to fire cannon balls //
     tank.fireCannonBalls = function () {
 
         var tank = this;
@@ -283,18 +302,21 @@ function createTank(scene) {
 
         });
 
+		// function to disappear the cannon balls after 3 seconds//
         setTimeout(function () {
 
             cannonBall.dispose();
         }, 3000);
     }
 
+	// function to fire laser beam //
     tank.fireLaserBeams = function () {
         var tank = this;
         if (!isRPressed) return;
         if (!tank.canFireLaser) return;
         tank.canFireLaser = false;
 
+		//function to disappear laser beam after 5 seconds//
         setTimeout(function () {
             tank.canFireLaser = true;
         }, 500);
@@ -340,6 +362,7 @@ function createTank(scene) {
     return tank;
 }
 
+//functions to create multiple enemies character//
 function createHeroDude(scene) {
 
     BABYLON.SceneLoader.ImportMesh("him", "Dude/", "Dude.babylon", scene, onDudeImported);
@@ -368,6 +391,8 @@ function createHeroDude(scene) {
     }
 }
 
+//////////////////////////////////////////////////////////////////
+// cloning the enemies character and assigning unique id to them//
 function DoClone(original, skeletons, id) {
     var myClone;
     var xrand = Math.floor(Math.random() * 501) - 250;
@@ -406,12 +431,17 @@ function DoClone(original, skeletons, id) {
     return myClone;
 }
 
+/////////////////////////////
+// function to move enemies//
 function moveHeroDude() {
     var heroDude = scene.getMeshByName("heroDude");
     if (heroDude)
         heroDude.Dude.move();
 }
 
+///////////////////////////////////
+//function to move cloned enemies//
+///////////////////////////////////
 function moveOtherDudes() {
     if (scene.dudes) {
         for (var q = 0; q < scene.dudes.length; q++) {
@@ -420,6 +450,9 @@ function moveOtherDudes() {
     }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+// below are all generic function of canvas to display and events listeners of keys//
+//////////////////////////////////////////////////////////////////////////////////////
 window.addEventListener("resize", function () {
     engine.resize();
 });
@@ -458,7 +491,7 @@ function modifySettings() {
 
 
 
-
+// event listeners on keys are pressed down//
 document.addEventListener("keydown", function (event) {
     if (event.key == 'w' || event.key == 'W') {
         isWPressed = true;
@@ -481,6 +514,7 @@ document.addEventListener("keydown", function (event) {
 
 });
 
+// event listeners on keys are released up//
 document.addEventListener("keyup", function (event) {
     if (event.key == 'w' || event.key == 'W') {
         isWPressed = false;
