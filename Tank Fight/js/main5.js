@@ -1,5 +1,5 @@
-﻿/// <reference path="js/babylon.max.js" />
-/// <reference path="js/cannon.js" />
+﻿/// <reference path="babylon.max.js" />
+/// <reference path="cannon.js" />
 var canvas;
 var engine;
 var scene;
@@ -335,6 +335,8 @@ var createScene = function () {
     var ground = CreateGround(scene);
     var tank = createTank(scene);
     scene.followCameraTank = createFollowCamera(scene, tank);
+	
+	//////////view ports ///////////////////
     scene.followCameraTank.viewport = new BABYLON.Viewport(
         0, 0, .5, 1);
     scene.activeCamera = scene.followCameraTank;
@@ -438,6 +440,7 @@ function createFreeCamera(scene, initialPosition) {
 
 function createFollowCamera(scene, target) {
 
+////different settings for camera
     var camera = new BABYLON.FollowCamera(target.name + "FollowCamera", target.position, scene, target);
     if (target.name == "heroDude") {
         camera.radius = 40;
@@ -457,6 +460,7 @@ function createFollowCamera(scene, target) {
     return camera;
 }
 
+// camera rotating //
 function createArcRotateCamera(scene, target)
 {
     var camera = new BABYLON.ArcRotateCamera("arc", 0, 1, 50, target);
@@ -648,7 +652,7 @@ function createTank(scene) {
 
 function createHeroDude(scene) {
 
-    var meshTask = scene.assetsManager.addMeshTask("DudeTask", "him", "models/Dude/", "Dude.babylon");
+    var meshTask = scene.assetsManager.addMeshTask("DudeTask", "him", "Dude/", "Dude.babylon");
     meshTask.onSuccess = function (task) {
         onDudeImported(task.loadedMeshes, task.loadedParticleSystems, task.loadedSkeletons);
         function onDudeImported(newMeshes, particleSystems, skeletons) {

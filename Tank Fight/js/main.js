@@ -1,12 +1,15 @@
-﻿/// <reference path="babylon.max.js" />
+﻿//Authour: Raja Naseer Ahmed Khan
+//Applied Project 2020
+
+/// <reference path="babylon.max.js" />
 /// <reference path="cannon.js" />
+var canvas;
+var engine;
+var Game = {};
+Game.scenes = {};
+Game.activeScene = 0;
 
-// Raja Naseer Ahmed Khan
-var canvas; // canvas to draw game
-var engine; // Babylon engine
-var scene; // scene to be visible 
-
-// checking if key is pressed or not
+//variables to store which key is pressed or not //
 var isWPressed = false;
 var isSPressed = false;
 var isAPressed = false;
@@ -14,27 +17,18 @@ var isDPressed = false;
 var isBPressed = false;
 var isRPressed = false;
 
-// score variable global
-var score = 0;
-
-// seperate canvas 2d for showing score canvas
-var context;
-
-
 document.addEventListener("DOMContentLoaded", startGame);
 
-// Dude is the enemey character and this is his class to make object
+//this is the class to create the object of animated character
 class Dude {
-	
-	// constructor taking following parameters
     constructor(dudeMesh, speed, id, scene, scaling) {
         this.dudeMesh = dudeMesh;
         this.id = id;
         this.scene = scene;
         this.health = 3;
+        this.frontVector = new BABYLON.Vector3(0, 0, -1);
         dudeMesh.Dude = this;
 
-		
         if (speed)
             this.speed = speed;
         else
@@ -50,6 +44,8 @@ class Dude {
         if (Dude.boundingBoxParameters == undefined) {
             Dude.boundingBoxParameters = this.CalculateBoundingBoxParameters();
         }
+		
+				// if each dude shows undefined error this will load the particle system to avoid the error//
         if (Dude.particleSystem == undefined) {
             Dude.particleSystem = this.createDudeParticleSystem();
         }
@@ -58,9 +54,8 @@ class Dude {
         this.bounder.dudeMesh = this.dudeMesh;
     }
 
-	// function to move the enemey dude //
-    move() {
-
+    followTank() {
+        var scene = this.scene;
         if (!this.bounder) return;
         this.dudeMesh.position = new BABYLON.Vector3(this.bounder.position.x,
             this.bounder.position.y - this.scaling * Dude.boundingBoxParameters.lengthY / 2.0, this.bounder.position.z);
@@ -73,9 +68,116 @@ class Dude {
         if (distance > 30)
             this.bounder.moveWithCollisions(dir.multiplyByFloats(this.speed, this.speed, this.speed));
     }
-	
-	// imaginary box around the dudes to make them collision visible
+
+    moveFPS() {
+        var scene = this.scene;
+        scene.activeCamera = scene.activeCameras[0];
+        if (scene.activeCamera != scene.followCameraDude && scene.activeCamera != scene.freeCameraDude) {
+            this.dudeMesh.animatableObject.pause();
+            return;
+        }
+        if (isWPressed || isSPressed) {
+            this.dudeMesh.animatableObject.restart();
+        }
+        else {
+            this.dudeMesh.animatableObject.pause();
+        }
+
+        if (scene.activeCamera == scene.followCameraDude) {
+            if (!this.bounder) return;
+            this.adjustYPosition();
+            this.adjustXZPosition();
+
+            var direction = this.frontVector;
+            var dir = direction.normalize();
+            var alpha = Math.atan2(-1 * dir.x, -1 * dir.z);
+            this.dudeMesh.rotation.y = alpha;
+            if (isWPressed) {
+                this.bounder.moveWithCollisions(this.frontVector.multiplyByFloats(this.speed, this.speed, this.speed));
+            }
+
+            if (isSPressed) {
+                this.bounder.moveWithCollisions(this.frontVector.multiplyByFloats(-1 * this.speed, -1 * this.speed, -1 * this.speed));
+            }
+            if (isDPressed) {
+                var alpha = this.dudeMesh.rotation.y;
+                alpha += .1;
+                this.frontVector = new BABYLON.Vector3(-1 * Math.sin(alpha), 0, -1 * Math.cos(alpha));
+            }
+
+            if (isAPressed) {
+                var alpha = this.dudeMesh.rotation.y;
+                alpha -= .1;
+                this.frontVector = new BABYLON.Vector3(-1 * Math.sin(alpha), 0, -1 * Math.cos(alpha));
+            }
+
+            scene.freeCameraDude.position.x = this.bounder.position.x;
+            scene.freeCameraDude.position.z = this.bounder.position.z;
+            scene.freeCameraDude.position.y = groundHeight + this.scaling * Dude.boundingBoxParameters.lengthY + .2;
+            scene.freeCameraDude.setTarget(scene.freeCameraDude.position.add(this.frontVector));
+        }
+        else if (scene.activeCamera == scene.freeCameraDude) {
+            var groundHeight = this.adjustYPosition();
+            this.adjustXZPosition();
+            scene.freeCameraDude.position.y = groundHeight + this.scaling * Dude.boundingBoxParameters.lengthY + .2;
+            var cameraFront = scene.freeCameraDude.getTarget().subtract(scene.freeCameraDude.position).normalize();
+            this.frontVector = cameraFront;
+            var dir = this.frontVector;
+            var alpha = Math.atan2(-1 * dir.x, -1 * dir.z);
+            this.dudeMesh.rotation.y = alpha;
+
+            this.bounder.position.x = scene.freeCameraDude.position.x - this.frontVector.x * 1.9;
+            this.bounder.position.z = scene.freeCameraDude.position.z - this.frontVector.z * 1.9;
+
+
+        }
+
+    }
+    fireGun() {
+        var scene = this.scene;
+        scene.assets["gunSound"].play();
+        var width = scene.getEngine().getRenderWidth();
+        var height = scene.getEngine().getRenderHeight();
+        var pickInfo = scene.pick(width / 4, height / 2, null, false, scene.activeCameras[0]);
+
+        if (pickInfo.pickedMesh) {
+            if (pickInfo.pickedMesh.name.startsWith("bounder")) {
+
+                pickInfo.pickedMesh.dudeMesh.Dude.decreaseHealth(pickInfo.pickedPoint);
+            }
+
+            else if (pickInfo.pickedMesh.name.startsWith("clone")) {
+                //console.log("cloone");
+                pickInfo.pickedMesh.parent.Dude.decreaseHealth(pickInfo.pickedPoint);
+
+            }
+        }
+    }
+    adjustYPosition() {
+        var scene = this.scene;
+        var origin = new BABYLON.Vector3(this.dudeMesh.position.x, 1000, this.dudeMesh.position.z);
+        var direction = new BABYLON.Vector3(0, -1, 0);
+        var ray = new BABYLON.Ray(origin, direction, 10000);
+        var pickInfo = scene.pickWithRay(ray, function (mesh) {
+            if (mesh.name == "ground") return true;
+            return false;
+        });
+        if (!pickInfo.pickedPoint) return 0;
+        var groundHeight = pickInfo.pickedPoint.y;
+        this.dudeMesh.position.y = groundHeight;
+        this.bounder.position.y = groundHeight + this.scaling * Dude.boundingBoxParameters.lengthY / 2.0;
+
+        return groundHeight;
+    }
+
+    adjustXZPosition() {
+        this.dudeMesh.position.x = this.bounder.position.x;
+        this.dudeMesh.position.z = this.bounder.position.z;
+    }
+
+			//creating the transparent box around the character to detect collision and stop them from striking each others//
     createBoundingBox() {
+        var scene = this.scene;
         var lengthX = Dude.boundingBoxParameters.lengthX;
         var lengthY = Dude.boundingBoxParameters.lengthY;
         var lengthZ = Dude.boundingBoxParameters.lengthZ;
@@ -86,25 +188,20 @@ class Dude {
         bounder.scaling.y = lengthY * this.scaling;
         bounder.scaling.z = lengthZ * this.scaling * 2;
 
-		//box around dude is not visible only himself
         bounder.isVisible = false;
 
-		// material for box around dude
         var bounderMaterial = new BABYLON.StandardMaterial("bounderMaterial", this.scene);
         bounderMaterial.alpha = .5;
         bounder.material = bounderMaterial;
         bounder.checkCollisions = true;
 
 
-		// bounding box is traveling with the dude x and y direction
         bounder.position = new BABYLON.Vector3(this.dudeMesh.position.x, this.dudeMesh.position.y
              + this.scaling * lengthY / 2, this.dudeMesh.position.z);
 
 
         return bounder;
     }
-	
-	// calculating the value of bounding box as it will be needed for collision detection
     CalculateBoundingBoxParameters() {
         var minX = 999999; var minY = 99999; var minZ = 999999;
         var maxX = -99999; var maxY = -999999; var maxZ = -99999;
@@ -146,10 +243,10 @@ class Dude {
 
         return { lengthX: _lengthX, lengthY: _lengthY, lengthZ: _lengthZ };
     }
-
-	//particles released when dude is getting hit by anything
+	
+	// creating the particle system, means animation to show when hit i.e blood and flare //
     createDudeParticleSystem() {
-
+        var scene = this.scene;
         // Create a particle system
         var particleSystem = new BABYLON.ParticleSystem("particles", 2000, scene);
 
@@ -179,32 +276,30 @@ class Dude {
         particleSystem.maxEmitPower = 10;
         return particleSystem;
     }
-
-	// dudes health is decreasing slowly by 1 not straight away object is destroyed
+	// this functions decreases by 1 each time hit by ball or cannon, which stops system to destroy on 1 hit//
     decreaseHealth(hitPoint) {
         Dude.particleSystem.emitter = hitPoint;
-        this.health--;
+        this.health--;// each time its getting hit reducing the health by 1, which is set to 3
         Dude.particleSystem.start();
         setTimeout(function () {
-            Dude.particleSystem.stop();
+            Dude.particleSystem.stop();// setting the timeout for particles to disappear, otherwise blood/flare will stay toget the object//
         }, 300);
         if (this.health <= 0) {
-            this.gotKilled();
+            this.gotKilled();// this will kill the object once health is 0
         }
 
     }
-
-	// to check wether dude is killed or not
+	// function to destroy object once health is 0//
+	// https://docs.babylonjs.com/babylon101/particles or search babylon js particles system //
     gotKilled() {
+        var scene = this.scene;
         scene.assets["dieSound"].play();
-        Dude.particleSystem.emitter = this.bounder.position;
-        console.log(this.bounder);
-        Dude.particleSystem.emitRate = 2000;
-		console.log("hitting dude");
-		
-		//scoring function taking in the score variable and incrementing it by 1 every time duded gets killed
-		text('Score: ' + Math.floor(score++), '30px Exo', 10, 30, "#FF0000");
-	
+
+        Dude.particleSystem.emitter = this.bounder.position;// getting hit and showing particles
+        //console.log(this.bounder);
+        Dude.particleSystem.emitRate = 2000; // setting the particle quantity to show on screen
+
+		        // Direction of each particle after it has been emitted
         Dude.particleSystem.minEmitBox = new BABYLON.Vector3(-1, 0, -1);
         Dude.particleSystem.maxEmitBox = new BABYLON.Vector3(1, 0, 1);
 
@@ -213,7 +308,6 @@ class Dude {
         Dude.particleSystem.direction2 = new BABYLON.Vector3(0, -1, 0);
 
         Dude.particleSystem.start();
-		
         setTimeout(function () {
             Dude.particleSystem.stop();
         }, 300);
@@ -224,50 +318,99 @@ class Dude {
 
 }
 
-
-// function how to start game //
+// this starts game and render the all the elements in game //
 function startGame() {
     canvas = document.getElementById("renderCanvas");
+    canvas.style.width = "800px";
+    canvas.style.height = "600px";
     engine = new BABYLON.Engine(canvas, true);
-    scene = createScene();
-    modifySettings();
-	
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    startFirstScene();
+}
+
+var startFirstScene = function()
+{
+    Game.scenes[Game.activeScene] = createFirstScene();
+    var scene = Game.scenes[Game.activeScene];
+    modifySettings(scene);
     var tank = scene.getMeshByName("heroTank");
     scene.toRender = function () {
-        tank.move(); // moving tank
-        tank.fireCannonBalls(); // fire canFireCannonBalls
-        tank.fireLaserBeams(); // fireLaserBeams
-        moveHeroDude(); // move the enemies
-        moveOtherDudes(); // move the clone of main enemy
-        scene.render(); // rendering scene on canvas
+        tank.move();
+        tank.fireCannonBalls(scene);
+        tank.fireLaserBeams(scene);
+        moveHeroDude(scene);
+        moveOtherDudes(scene);
+        scene.render();
     }
-// loading the asset manager
+
     scene.assetsManager.load();
 }
 
-// following is generic in all canvas hence don't need explaination
-var createScene = function () {
+var createFirstScene = function () {
+
     var scene = new BABYLON.Scene(engine);
     scene.assetsManager = configureAssetsManager(scene);
     scene.enablePhysics();
     var ground = CreateGround(scene);
-    var freeCamera = createFreeCamera(scene);
     var tank = createTank(scene);
-    var followCamera = createFollowCamera(scene, tank);
-    scene.activeCamera = followCamera;
+    var portal = createPortal(scene, tank);
+    scene.followCameraTank = createFollowCamera(scene, tank);
+    scene.followCameraTank.viewport = new BABYLON.Viewport(0, 0, .5, 1);
     createLights(scene);
     createHeroDude(scene);
     loadSounds(scene);
     return scene;
 };
 
-// creating ground from the height map provided //
+var startSecondScene = function () {
+    //console.log("ActiveScene is : " + Game.activeScene);
+    Game.scenes[Game.activeScene] = createSecondScene();
+    var scene = Game.scenes[Game.activeScene];
+    modifySettings(scene);
+    var tank = scene.getMeshByName("heroTank");
+    scene.toRender = function () {
+        tank.move();
+        tank.fireCannonBalls(scene);
+        tank.fireLaserBeams(scene);
+        moveHeroDude(scene);
+        moveOtherDudes(scene);
+        scene.render();
+    }
+
+    scene.assetsManager.load();
+}
+
+var createSecondScene = function () {
+
+    var scene = new BABYLON.Scene(engine);
+    scene.assetsManager = configureAssetsManager(scene);
+    scene.enablePhysics();
+    var ground = CreateGround(scene);
+    var tank = createTank(scene);
+    var portal = createPortal(scene, tank);
+    scene.followCameraTank = createFollowCamera(scene, tank);
+    scene.followCameraTank.viewport = new BABYLON.Viewport(0, 0, .5, 1);
+    createLights(scene);
+    createHeroDude(scene);
+    loadSounds(scene);
+    return scene;
+};
+
+// this is creating the ground //
 function CreateGround(scene) {
-	var ground = BABYLON.Mesh.CreateGroundFromHeightMap("ground", "images/hmap2.jpg", 200, 200, 250, 0, 10, scene, false, OnGroundCreated);
-    console.log(ground);
+    var ground = new BABYLON.Mesh.CreateGroundFromHeightMap("ground", "images/hmap1.png", 2000, 2000, 20, 0, 1000, scene, false, OnGroundCreated);
+    //console.log(ground);
     function OnGroundCreated() {
         var groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
         groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
+        if(Game.activeScene%3 == 0)
+            groundMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
+        else if(Game.activeScene%3 == 1)
+            groundMaterial.diffuseColor = new BABYLON.Color3(0, 0, 1);
+        else if(Game.activeScene %3 == 2)
+            groundMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0);
+
         ground.material = groundMaterial;
         ground.checkCollisions = true;
         ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground,
@@ -276,57 +419,75 @@ function CreateGround(scene) {
     return ground;
 }
 
+// creating lights to make things visible//
 function createLights(scene) {
     var light0 = new BABYLON.DirectionalLight("dir0", new BABYLON.Vector3(-.1, -1, 0), scene);
     var light1 = new BABYLON.DirectionalLight("dir1", new BABYLON.Vector3(-1, -1, 0), scene);
 
 }
-//==================================================================/
-/////Load sound ///
-function loadSounds(scene)
-{
+
+function loadSounds(scene) {
     var assetsManager = scene.assetsManager;
-    //sound file in babylon //
-	var binaryTask = assetsManager.addBinaryFileTask("laserSound", "/sounds/laser.wav");
+    var binaryTask = assetsManager.addBinaryFileTask("laserSound", "sounds/laser.wav");
     binaryTask.onSuccess = function (task) {
         scene.assets["laserSound"] = new BABYLON.Sound("laser", task.data, scene, null, { loop: false });
     }
 
-    binaryTask = assetsManager.addBinaryFileTask("cannonSound", "/sounds/cannon.wav");
+    binaryTask = assetsManager.addBinaryFileTask("cannonSound", "sounds/cannon.wav");
     binaryTask.onSuccess = function (task) {
         scene.assets["cannonSound"] = new BABYLON.Sound("cannon", task.data, scene, null, { loop: false });
     }
 
-    binaryTask = assetsManager.addBinaryFileTask("dieSound", "/sounds/die.wav");
+    binaryTask = assetsManager.addBinaryFileTask("dieSound", "sounds/die.wav");
     binaryTask.onSuccess = function (task) {
         scene.assets["dieSound"] = new BABYLON.Sound("die", task.data, scene, null, { loop: false });
     }
+    binaryTask = assetsManager.addBinaryFileTask("shotSound", "sounds/shot.wav");
+    binaryTask.onSuccess = function (task) {
+        scene.assets["gunSound"] = new BABYLON.Sound("gun", task.data, scene, null, { loop: false });
+    }
+
 }
-//=============================================================//
-function configureAssetsManager(scene)
-{
+
+function loadCrossHair(scene) {
+    var impact = BABYLON.Mesh.CreateBox("box", .01, scene);
+
+    var freeCamera = scene.freeCameraDude;
+    freeCamera.minZ = .1;
+    impact.parent = freeCamera;
+    impact.position.z += .2;
+    impact.isPickable = false;
+    impact.material = new BABYLON.StandardMaterial("target", scene);
+    impact.material.diffuseTexture = new BABYLON.Texture("images/gunaims.png", scene);
+    impact.material.diffuseTexture.hasAlpha = true;
+}
+function configureAssetsManager(scene) {
     scene.assets = {};
     var assetsManager = new BABYLON.AssetsManager(scene);
+    scene.assetsManager = assetsManager;
     assetsManager.onProgress = function (remainingCount, totalCount, lastFinishedTask) {
         engine.loadingUIText = 'We are loading the scene. ' + remainingCount + ' out of ' + totalCount + ' items still need to be loaded.';
     };
 
     assetsManager.onFinish = function (tasks) {
+        if (Game.activeScene > 0) {
+            Game.scenes[Game.activeScene - 1].dispose();
+        }
         engine.runRenderLoop(function () {
-            scene.toRender();
+            Game.scenes[Game.activeScene].toRender();
         });
     };
 
     return assetsManager;
 }
 
-// creating camera which will rotate around
-function createFreeCamera(scene) {
-    var camera = new BABYLON.FreeCamera("freeCamera", new BABYLON.Vector3(0, 0, 0), scene);
+//camera to view camera the games/scene//
+function createFreeCamera(scene, initialPosition) {
+    var camera = new BABYLON.FreeCamera("freeCamera", initialPosition, scene);
     camera.attachControl(canvas);
-    camera.position.y = 50;
     camera.checkCollisions = true;
     camera.applyGravity = true;
+    camera.ellipsoid = new BABYLON.Vector3(.1, .1, .1);
     camera.keysUp.push('w'.charCodeAt(0));
     camera.keysUp.push('W'.charCodeAt(0));
     camera.keysDown.push('s'.charCodeAt(0));
@@ -339,20 +500,69 @@ function createFreeCamera(scene) {
     return camera;
 }
 
-// camera following the tank
+//camera following the player //
 function createFollowCamera(scene, target) {
-    var camera = new BABYLON.FollowCamera("tankFollowCamera", target.position, scene, target);
-    camera.radius = 20; // how far from the object to follow
-    camera.heightOffset = 4; // how high above the object to place the camera
-    camera.rotationOffset = 180; // the viewing angle
+
+    var camera = new BABYLON.FollowCamera(target.name + "FollowCamera", target.position, scene, target);
+    if (target.name == "heroTank") {
+
+        camera.radius = 20; // how far from the object to follow
+        camera.heightOffset = 4; // how high above the object to place the camera
+        camera.rotationOffset = 180; // the viewing angle
+
+    }
+    else {
+        camera.radius = 40;
+        camera.heightOffset = 10; // how high above the object to place the camera
+        camera.rotationOffset = 0; // the viewing angle
+    }
+
+
     camera.cameraAcceleration = .1; // how fast to move
     camera.maxCameraSpeed = 5; // speed limit
     return camera;
 }
+function createArcRotateCamera(scene,target)
+{
+    var camera = new BABYLON.ArcRotateCamera("arc", 0, 1, 50, target, scene);
+    return camera;
+}
+function animateArcRotateCamera(camera)
+{
+    var animationRotateAlpha = new BABYLON.Animation("myAnimation", "alpha", 10, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    var animationRotateBeta = new BABYLON.Animation("myAnimation", "beta", 10, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    var animationElongateRadius = new BABYLON.Animation("myAnimation", "radius", 10, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
 
-// creating the tank
+    var alphaKeys = [];
+    alphaKeys.push({ frame: 0, value: 0 });
+    alphaKeys.push({ frame: 50, value: Math.PI });
+    alphaKeys.push({ frame: 100, value: 2 * Math.PI });
+    animationRotateAlpha.setKeys(alphaKeys);
+
+    var betaKeys = [];
+    betaKeys.push({ frame: 0, value: Math.PI / 4 });
+    betaKeys.push({ frame: 50, value: Math.PI / 2 });
+    betaKeys.push({ frame: 100, value: Math.PI / 4 });
+    animationRotateBeta.setKeys(betaKeys);
+
+    var radiusKeys = [];
+    radiusKeys.push({ frame: 0, value: 40 });
+    radiusKeys.push({ frame: 50, value: 80 });
+    radiusKeys.push({ frame: 100, value: 40 });
+    animationElongateRadius.setKeys(radiusKeys);
+
+    camera.animations = [];
+    camera.animations.push(animationRotateAlpha);
+    camera.animations.push(animationRotateBeta);
+    camera.animations.push(animationElongateRadius);
+
+    scene.beginAnimation(camera, 0, 100, true);
+
+}
+
+// creating the tank //
 function createTank(scene) {
-    var tank = new BABYLON.MeshBuilder.CreateBox("heroTank", { height: 3, depth: 6, width: 6 }, scene);
+    var tank = new BABYLON.MeshBuilder.CreateBox("heroTank", { height: 1, depth: 6, width: 6 }, scene);
     var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
     tankMaterial.diffuseColor = new BABYLON.Color3.Red;
     tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
@@ -362,15 +572,19 @@ function createTank(scene) {
     tank.frontVector = new BABYLON.Vector3(0, 0, 1);
     tank.canFireCannonBalls = true;
     tank.canFireLaser = true;
-    //tank.isPickable = false;
-
-	// tank move function
+	
+		// creating the tank move //
     tank.move = function () {
+        scene.activeCamera = scene.activeCameras[0];
+        if (scene.activeCamera != scene.followCameraTank) {
+            return;
+        }
         var yMovement = 0;
         if (tank.position.y > 2) {
             tank.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
         }
 
+				// move tank according to key press events//
         if (isWPressed) {
             tank.moveWithCollisions(tank.frontVector.multiplyByFloats(tank.speed, tank.speed, tank.speed));
         }
@@ -390,16 +604,16 @@ function createTank(scene) {
 
     }
 
-
-	// cannon ball fire function
-    tank.fireCannonBalls = function () {
+	// function to fire cannon balls //
+    tank.fireCannonBalls = function (scene) {
 
         var tank = this;
         if (!isBPressed) return;
         if (!tank.canFireCannonBalls) return;
         tank.canFireCannonBalls = false;
 
-		// cannon ball disappear after while
+			// function to disappear the cannon balls after 3 seconds//
+
         setTimeout(function () {
             tank.canFireCannonBalls = true;
         }, 500);
@@ -446,14 +660,16 @@ function createTank(scene) {
         }, 3000);
     }
 
-	// laser beam fire function
-    tank.fireLaserBeams = function () {
+			// function to fire laser beam //
+
+    tank.fireLaserBeams = function (scene) {
         var tank = this;
         if (!isRPressed) return;
         if (!tank.canFireLaser) return;
         tank.canFireLaser = false;
 
-		// laser disappear after shooting
+						//function to disappear laser beam after 5 seconds//
+
         setTimeout(function () {
             tank.canFireLaser = true;
         }, 500);
@@ -497,7 +713,37 @@ function createTank(scene) {
     return tank;
 }
 
-// main enemey created
+function createPortal(scene, hero)
+{
+    var portal = new BABYLON.Mesh.CreateCylinder("portal", 100, 100, 100, 24, 1, scene);
+    portal.position.x += 200;
+    portal.position.z += 200;
+    portal.position.y += 50;
+    portal.material = new BABYLON.StandardMaterial("portal", scene);
+    portal.material.diffuseTexture = new BABYLON.Texture("images/lightning.jpg", scene);
+    portal.material.diffuseTexture.uScale = 4;
+    portal.material.emissiveColor = new BABYLON.Color3.Yellow;
+    portal.actionManager = new BABYLON.ActionManager(scene);
+    portal.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+{
+    trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger,
+    parameter: hero
+},
+function () {
+
+    engine.stopRenderLoop();
+    Game.activeScene = Game.activeScene +1;
+    startSecondScene();
+
+}
+));
+
+    return portal;
+
+}
+
+//functions to create multiple enemies character//
+
 function createHeroDude(scene) {
 
     var meshTask = scene.assetsManager.addMeshTask("DudeTask", "him", "Dude/", "Dude.babylon");
@@ -509,22 +755,35 @@ function createHeroDude(scene) {
             var heroDude = newMeshes[0];
 
             for (var i = 1 ; i < heroDude.getChildren().length ; i++) {
-                console.log(heroDude.getChildren()[i].name);
+                //console.log(heroDude.getChildren()[i].name);
                 heroDude.getChildren()[i].name = "clone_".concat(heroDude.getChildren()[i].name);
-                console.log(heroDude.getChildren()[i].name);
+                //console.log(heroDude.getChildren()[i].name);
             }
-            scene.beginAnimation(skeletons[0], 0, 120, true, 1.0);
+            heroDude.animatableObject = scene.beginAnimation(skeletons[0], 0, 120, true, 1.0);
             var hero = new Dude(heroDude, 2, -1, scene, .2);
+            scene.followCameraDude = createFollowCamera(scene, heroDude);
+            scene.followCameraDude.viewport = new BABYLON.Viewport(0, 0, .5, 1);
 
+            var freeCamPosition = new BABYLON.Vector3(heroDude.position.x,
+                heroDude.position.y + Dude.boundingBoxParameters.lengthY + .2
+                , heroDude.position.z);
+            scene.freeCameraDude = createFreeCamera(scene, freeCamPosition);
+            scene.freeCameraDude.viewport = new BABYLON.Viewport(0, 0, .5, 1);
+            scene.activeCameras[0] = scene.freeCameraDude;
+
+            loadCrossHair(scene);
             scene.dudes = [];
             scene.dudes[0] = heroDude;
             for (var q = 1 ; q <= 10 ; q++) {
                 scene.dudes[q] = DoClone(heroDude, skeletons, q);
                 scene.beginAnimation(scene.dudes[q].skeleton, 0, 120, true, 1.0);
                 var temp = new Dude(scene.dudes[q], 2, q, scene, .2);
-
             }
 
+            scene.arcRotateDude = createArcRotateCamera(scene, scene.dudes[1]);
+            scene.arcRotateDude.viewport = new BABYLON.Viewport(.5, 0, .5, 1);
+            scene.activeCameras.push(scene.arcRotateDude);
+            animateArcRotateCamera(scene.arcRotateDude);
         }
     }
 
@@ -535,9 +794,9 @@ function createHeroDude(scene) {
         var heroDude = newMeshes[0];
 
         for (var i = 1 ; i < heroDude.getChildren().length ; i++) {
-            console.log(heroDude.getChildren()[i].name);
+            //console.log(heroDude.getChildren()[i].name);
             heroDude.getChildren()[i].name = "clone_".concat(heroDude.getChildren()[i].name);
-            console.log(heroDude.getChildren()[i].name);
+            //console.log(heroDude.getChildren()[i].name);
         }
         scene.beginAnimation(skeletons[0], 0, 120, true, 1.0);
         var hero = new Dude(heroDude, 2, -1, scene, .2);
@@ -554,8 +813,7 @@ function createHeroDude(scene) {
     }
 }
 
-
-//cloning of enemy from main enemy
+// cloning the enemies character and assigning unique id to them//
 function DoClone(original, skeletons, id) {
     var myClone;
     var xrand = Math.floor(Math.random() * 501) - 250;
@@ -594,37 +852,46 @@ function DoClone(original, skeletons, id) {
     return myClone;
 }
 
-// moving main enemy
-function moveHeroDude() {
+// function to move enemies//
+function moveHeroDude(scene) {
     var heroDude = scene.getMeshByName("heroDude");
     if (heroDude)
-        heroDude.Dude.move();
+        heroDude.Dude.moveFPS();
 }
 
-// moving clone enemies
-function moveOtherDudes() {
+//function to move cloned enemies//
+function moveOtherDudes(scene) {
     if (scene.dudes) {
-        for (var q = 0 ; q < scene.dudes.length ; q++) {
-            scene.dudes[q].Dude.move();
+        for (var q = 1 ; q < scene.dudes.length ; q++) {
+            scene.dudes[q].Dude.followTank();
         }
     }
 }
 
+// below are all generic function of canvas to display and events listeners of keys//
 window.addEventListener("resize", function () {
+    canvas.style.width = "800px";
+    canvas.style.height = "600px";
     engine.resize();
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 });
 
-function modifySettings() {
+function modifySettings(scene) {
     scene.onPointerDown = function () {
         if (!scene.alreadyLocked) {
-            console.log("Requesting pointer lock");
+            //console.log("Requesting pointer lock");
             canvas.requestPointerLock = canvas.requestPointerLock ||
                 canvas.msRequestPointerLock || canvas.mozRequestPointerLock ||
                 canvas.webkitRequestPointerLock;
             canvas.requestPointerLock();
         }
         else {
-            console.log("Not requesting because we are already locked");
+            //console.log("Not requesting because we are already locked");
+            if (scene.activeCameras[0] == scene.freeCameraDude) {
+                var heroDude = scene.dudes[0];
+                heroDude.Dude.fireGun();
+            }
         }
     }
 
@@ -634,6 +901,7 @@ function modifySettings() {
     document.addEventListener("webkitpointerlockchange", pointerLockListener);
 
     function pointerLockListener() {
+        var scene = Game.scenes[Game.activeScene];
         var element = document.mozPointerLockElement || document.webkitPointerLockElement || document.msPointerLockElement || document.pointerLockElement || null;
 
         if (element) {
@@ -646,19 +914,11 @@ function modifySettings() {
 
 }
 
-// function for score canvas
-function text(txt, fnt, x, y, c) {
-	canvas = document.getElementById("renderCanvas2");
-	context = canvas.getContext('2d')
-	context.fillStyle = c;
-	context.font = fnt;
-	context.clearRect(50,0,80,100);
-	context.fillText(txt, x, y);
-}
 
 
-// checking key presses on keyboard
+
 document.addEventListener("keydown", function (event) {
+    var scene = Game.scenes[Game.activeScene];
     if (event.key == 'w' || event.key == 'W') {
         isWPressed = true;
     }
@@ -677,10 +937,20 @@ document.addEventListener("keydown", function (event) {
     if (event.key == 'r' || event.key == 'R') {
         isRPressed = true;
     }
+    if (event.key == 't' || event.key == 'T') {
+        scene.activeCameras[0] = scene.followCameraTank;
+    }
+    if (event.key == 'y' || event.key == 'Y') {
+        scene.activeCameras[0] = scene.followCameraDude;
+    }
+    if (event.key == 'u' || event.key == 'U') {
+        scene.activeCameras[0] = scene.freeCameraDude;
+    }
 
 });
 
 document.addEventListener("keyup", function (event) {
+    var scene = Game.scenes[Game.activeScene];
     if (event.key == 'w' || event.key == 'W') {
         isWPressed = false;
     }
