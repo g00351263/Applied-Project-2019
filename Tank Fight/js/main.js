@@ -5,9 +5,11 @@
 /// <reference path="cannon.js" />
 var canvas;
 var engine;
+
+// game object to store multiple games
 var Game = {};
-Game.scenes = {};
-Game.activeScene = 0;
+var enemies = {};
+var socket;
 
 //variables to store which key is pressed or not //
 var isWPressed = false;
@@ -16,8 +18,59 @@ var isAPressed = false;
 var isDPressed = false;
 var isBPressed = false;
 var isRPressed = false;
+// score variable global
+var score = 0;
 
+// seperate canvas 2d for showing score canvas
+var context;
 document.addEventListener("DOMContentLoaded", startGame);
+
+
+// game which will store multiple scenes
+Game.scenes = {};
+
+// setting the active scene to 0
+Game.activeScene = 0;
+
+
+function connectToServer() {
+    socket = io.connect("http://localhost:3000", { transports: ['websocket'], upgrade:false });
+    socket.on("connect", function () {
+        console.log("connction estaplished successfully");
+        
+        socket.on("GetYourID", function (data) {
+            Game.id = data.id;
+            startGame();
+
+            socket.emit("ThankYou", {});
+        });
+
+        socket.on("AnotherTankCreated", function (data) {
+            createTank(scene, data);
+        });
+
+        socket.on("AnotherTankMoved", function (data) {
+            var tank = enemies[data.id];
+            tank.setState(data);
+        
+        });
+
+        window.onbeforeunload = function () {
+            socket.emit("IGoAway", Game.id);
+            socket.disconnect();
+        }
+
+        socket.on("AnotherWentAway", function (data) {
+            
+            var tank = enemies[data.id];
+            tank.dispose();
+            delete enemies[data.id];
+        
+        });
+
+    });
+}
+
 
 //this is the class to create the object of animated character
 class Dude {
@@ -299,6 +352,8 @@ class Dude {
         //console.log(this.bounder);
         Dude.particleSystem.emitRate = 2000; // setting the particle quantity to show on screen
 
+				//scoring function taking in the score variable and incrementing it by 1 every time duded gets killed
+		scoreCar(Game.activeScene,'Score: ' + Math.floor(score++), '30px Exo', 10, 30, "#FF0000");
 		        // Direction of each particle after it has been emitted
         Dude.particleSystem.minEmitBox = new BABYLON.Vector3(-1, 0, -1);
         Dude.particleSystem.maxEmitBox = new BABYLON.Vector3(1, 0, 1);
@@ -317,7 +372,8 @@ class Dude {
     }
 
 }
-
+//////////////////////////////////////
+///////////////////////////////////
 // this starts game and render the all the elements in game //
 function startGame() {
     canvas = document.getElementById("renderCanvas");
@@ -329,14 +385,21 @@ function startGame() {
     startFirstScene();
 }
 
+// this is the first scene to be loaded as level 1
 var startFirstScene = function()
 {
+	
+	// pushing the first scene into array and create scene there
     Game.scenes[Game.activeScene] = createFirstScene();
+	
+	// this scene will be active scene
     var scene = Game.scenes[Game.activeScene];
     modifySettings(scene);
     var tank = scene.getMeshByName("heroTank");
-    scene.toRender = function () {
+    var cr = scene.getMeshByName("cross");
+	scene.toRender = function () {
         tank.move();
+		cr.move(scene);
         tank.fireCannonBalls(scene);
         tank.fireLaserBeams(scene);
         moveHeroDude(scene);
@@ -347,6 +410,7 @@ var startFirstScene = function()
     scene.assetsManager.load();
 }
 
+// this will create the scene
 var createFirstScene = function () {
 
     var scene = new BABYLON.Scene(engine);
@@ -354,6 +418,7 @@ var createFirstScene = function () {
     scene.enablePhysics();
     var ground = CreateGround(scene);
     var tank = createTank(scene);
+	 var cr = scene.getMeshByName("cross");
     var portal = createPortal(scene, tank);
     scene.followCameraTank = createFollowCamera(scene, tank);
     scene.followCameraTank.viewport = new BABYLON.Viewport(0, 0, .5, 1);
@@ -369,6 +434,7 @@ var startSecondScene = function () {
     var scene = Game.scenes[Game.activeScene];
     modifySettings(scene);
     var tank = scene.getMeshByName("heroTank");
+	 var cr = scene.getMeshByName("cross");
     scene.toRender = function () {
         tank.move();
         tank.fireCannonBalls(scene);
@@ -561,20 +627,102 @@ function animateArcRotateCamera(camera)
 }
 
 // creating the tank //
-function createTank(scene) {
-    var tank = new BABYLON.MeshBuilder.CreateBox("heroTank", { height: 1, depth: 6, width: 6 }, scene);
-    var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
-    tankMaterial.diffuseColor = new BABYLON.Color3.Red;
-    tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
-    tank.material = tankMaterial;
-    tank.position.y += 2;
-    tank.speed = 1;
-    tank.frontVector = new BABYLON.Vector3(0, 0, 1);
-    tank.canFireCannonBalls = true;
-    tank.canFireLaser = true;
+function createTank(scene, data) {
+    
+	var mat = new BABYLON.StandardMaterial("mat", scene);
+    var texture = new BABYLON.Texture("http://jerome.bousquie.fr/BJS/images/spriteAtlas.png", scene);
+    mat.diffuseTexture = texture;
 	
+	
+    var columns = 6;  // 6 columns
+    var rows = 4;  // 4 rows
+
+    var faceUV = new Array(6);
+
+    faceUV[1] = new BABYLON.Vector4(3 / columns, 0, (3 + 1) / columns, 1 / rows);
+
+    var options = {
+        width: 6,
+        height: 1,
+        depth: 6,
+        faceUV: faceUV
+    };
+
+
+///////////////
+	var tank = new BABYLON.MeshBuilder.CreateBox("heroTank", options, scene);
+    
+	var cros = new BABYLON.MeshBuilder.CreateBox("cross",  {height: 0, width: .1, depth: .1}, scene);
+	cros.isPickable = false;
+	cros.material = new BABYLON.StandardMaterial("dd", scene);	    
+	cros.material.diffuseTexture = new BABYLON.Texture("images/gunaims.png", scene);
+    cros.material.diffuseTexture.hasAlpha = true;
+	cros.position.z = +5;
+	cros.position.x = +10;
+	//var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
+    
+
+	
+	//tankMaterial.diffuseColor = new BABYLON.Color3.Red;
+    
+	//tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
+    
+	//tank.material = tankMaterial;
+    tank.material = mat
+	tank.position.y += 2;
+    
+	tank.speed = 1;
+    
+	tank.frontVector = new BABYLON.Vector3(0, 0, 1);
+	
+	
+	cros.material = mat
+	cros.position.y += 2;
+    
+	cros.speed = 1;
+    
+	cros.frontVector = new BABYLON.Vector3(0, 0, 1);
+	
+    
+	tank.canFireCannonBalls = true;
+    
+	tank.canFireLaser = true;
+	////////////////////
+	
+    tank.state = {
+        id: Game.id,
+    x: tank.position.x,
+    y: tank.position.y,
+    z: tank.position.z,
+    rX: tank.rotation.x,
+    rY: tank.rotation.y,
+    rZ: tank.rotation.z
+}
+tank.setState = function(data)
+{
+    tank.position.x = data.x;
+    tank.position.y = data.y;
+    tank.position.z = data.z;
+    tank.rotation.x = data.rX;
+    tank.rotation.y = data.rY;
+    tank.rotation.z = data.rZ;
+}
+
+if (data) {
+    tankMaterial.diffuseColor = new BABYLON.Color3.Yellow;
+    tankMaterial.emissiveColor = new BABYLON.Color3.Yellow;
+    enemies[data.id] = tank;
+    tank.setState(data);
+}
+else {
+    //socket.emit("IWasCreated", tank.state);
+}
+	
+	//////////////////////
 		// creating the tank move //
     tank.move = function () {
+		var notifyServer = false;
+		
         scene.activeCamera = scene.activeCameras[0];
         if (scene.activeCamera != scene.followCameraTank) {
             return;
@@ -582,28 +730,45 @@ function createTank(scene) {
         var yMovement = 0;
         if (tank.position.y > 2) {
             tank.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
+			        notifyServer = true;
+
         }
 
 				// move tank according to key press events//
         if (isWPressed) {
             tank.moveWithCollisions(tank.frontVector.multiplyByFloats(tank.speed, tank.speed, tank.speed));
+			        notifyServer = true;
+
         }
         if (isSPressed) {
             tank.moveWithCollisions(tank.frontVector.multiplyByFloats(-1 * tank.speed, -1 * tank.speed, -1 * tank.speed));
+			        notifyServer = true;
+
         }
         if (isAPressed) {
             tank.rotation.y -= .1;
             tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y))
-        }
+                notifyServer = true;
+
+		}
         if (isDPressed) {
             tank.rotation.y += .1;
             tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y))
+        notifyServer = true;
 
         }
 
 
     }
+ cros.move = function (scene) {
+	    this.scene = Game.activeScene;
+        var pos = tank.position;
 
+        cros.position = new BABYLON.Vector3(pos.x, pos.y + 3, pos.z);
+        cros.position.addInPlace(tank.frontVector.multiplyByFloats(5, 5, 5));
+
+
+    }
 	// function to fire cannon balls //
     tank.fireCannonBalls = function (scene) {
 
@@ -709,6 +874,8 @@ function createTank(scene) {
                 }
             }
         }
+		    
+
     }
     return tank;
 }
@@ -870,11 +1037,12 @@ function moveOtherDudes(scene) {
 
 // below are all generic function of canvas to display and events listeners of keys//
 window.addEventListener("resize", function () {
-    canvas.style.width = "800px";
+/*     canvas.style.width = "800px";
     canvas.style.height = "600px";
     engine.resize();
     canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    canvas.style.height = '100%'; */
+	engine.resize();
 });
 
 function modifySettings(scene) {
@@ -914,6 +1082,17 @@ function modifySettings(scene) {
 
 }
 
+
+// function for score canvas
+function scoreCar(scene, txt, fnt, x, y, c) {
+	scene = this.scene;
+	canvas = document.getElementById("renderCanvas2");
+	context = canvas.getContext('2d')
+	context.fillStyle = c;
+	context.font = fnt;
+	context.clearRect(50,0,80,100);
+	context.fillText(txt, x, y);
+}
 
 
 
