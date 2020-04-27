@@ -122,7 +122,47 @@ function createFollowCamera(scene, target) {
     return camera;
 }
 function createTank(scene, data) {
-    var tank = new BABYLON.MeshBuilder.CreateBox("HeroTank", { height: 1, depth: 6, width: 6 }, scene);
+
+    /////////////////////////////////////////
+    	//Array of paths to construct extrusion
+	var myShape = [
+        new BABYLON.Vector3(0, 5, 0),
+       new BABYLON.Vector3(1, 1, 0),
+       new BABYLON.Vector3(5, 0, 0),
+       new BABYLON.Vector3(1, -1, 0),
+       new BABYLON.Vector3(0, -5, 0),
+       new BABYLON.Vector3(-1, -1, 0),
+       new BABYLON.Vector3(-5, 0, 0),
+       new BABYLON.Vector3(-1, 1, 0)
+];
+
+myShape.push(myShape[0]);
+
+var myPath = [
+       new BABYLON.Vector3(0, 0, 0),
+       new BABYLON.Vector3(0, 0, 2),
+       new BABYLON.Vector3(0, 0, 4),
+       new BABYLON.Vector3(0, 0, 6),
+       new BABYLON.Vector3(0, 0, 8),
+       new BABYLON.Vector3(0, 0, 10)
+];
+
+var scaling = function(i, distance) {
+   return 1/(i+1);
+};
+
+//Create custom extrusion with updatable parameter set to true for later changes
+var tank = BABYLON.MeshBuilder.ExtrudeShapeCustom("HeroTank", {shape: myShape, path: myPath, scaleFunction: scaling, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
+
+var scaling2 = function(i, distance) {
+   return 1 + 0.2*distance;
+};
+
+var rotation = function(i, distance) {
+   return distance * Math.PI / 108;
+};	
+    //////////////////////////////////////////////
+    //var tank = new BABYLON.MeshBuilder.CreateBox("HeroTank", { height: 1, depth: 6, width: 6 }, scene);
     var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
     tankMaterial.diffuseColor = new BABYLON.Color3.Red;
     tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
