@@ -47,7 +47,16 @@ function connectToServer() {
             delete enemies[data.id];
         
         });
+		socket.emit('join', 'Hello World from client');
+});
+socket.on('broad', function(data) {
+    $('#future').append(data+ "<br/>");
+});
 
+$('form').submit(function(e){
+e.preventDefault();
+var message = $('#chat_input').val();
+socket.emit('messages', message);
     });
 }
 
@@ -308,3 +317,14 @@ document.addEventListener("keyup", function (event) {
     }
 
 });
+
+function practice(){
+	var x = document.getElementById("chat").value;
+	console.log(x);
+	return x;
+}
+
+function reply(data){
+ var id = document.getElementById("mess");
+ id.innerHTML = data;
+}

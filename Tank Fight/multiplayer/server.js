@@ -2,7 +2,7 @@
 var express = require('express');
 var socket = require('socket.io');
 
-
+var count = 0;
 var app = express();
 
 app.use("/", express.static(__dirname));
@@ -31,6 +31,8 @@ io.on("connection", function (socket) {
 
     });
 
+    //count++;
+   // socket.send("Active Sockets are " + count);
     socket.on("IWasCreated", function (data) {
         
         if (data.id != socket.id) { 
@@ -58,5 +60,12 @@ io.on("connection", function (socket) {
         socket.broadcast.emit("AnotherWentAway", { id : socket.id });
     });
 
+    socket.on('join', function(data) {
+        console.log(data);
+        socket.on('messages', function(data) {
+            socket.emit('broad', data);
+            socket.broadcast.emit('broad',data);
+        });
+    });
 });
 
