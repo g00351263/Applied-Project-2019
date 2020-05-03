@@ -1,21 +1,25 @@
-Project Name : Babylon.js Multiplayer 3D Game Development
+## <center>Project Name : Babylon.js Multiplayer 3D Game Development</center>
 
-Designer : Raja Naseer Ahmed Khan.
+<p align="center">
+  <img src = "https://github.com/g00351263/Applied-Project-2019/blob/master/screen.jpg" height="1000" width="1000">
+</p>
 
-About The Project :
+### Designer : Raja Naseer Ahmed Khan.
+
+### About The Project :
 
 This project was designed for year long module of BSc(Hons) Software Development at Galway Mayo Institue of Techonology.
 
 
-Build Requirement:
+### Build Requirement:
 
 Used Windows 10.
 NPM, Node, MySql with Wamp Server.
 
 
-Project Details:
+## Project Details:
 
-For Single Player:
+### For Single Player:
 
 Please Copy paste the single player Tank Fight folder into www directory of wamp server, create database with the provided file of mysql.
 
@@ -26,7 +30,7 @@ type in details or register for details to login.
 once logged in can see the menu (please select single player)
 
 
-For Multiplayer:
+### For Multiplayer:
 
 Please run npm install on the multiplayer folder to install all required dependencies.
 
