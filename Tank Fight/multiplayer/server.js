@@ -60,6 +60,12 @@ io.on("connection", function (socket) {
         socket.broadcast.emit("AnotherWentAway", { id : socket.id });
     });
 
+    socket.on("anotherbpressed", function (data){
+        console.log(data);
+        socket.emit("data to fire ball", data);
+
+    });
+
     socket.on('join', function(data) {
         console.log(data);
         socket.on('messages', function(data) {

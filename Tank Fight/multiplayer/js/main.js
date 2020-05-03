@@ -7,6 +7,9 @@ var isWPressed = false;
 var isSPressed = false;
 var isAPressed = false;
 var isDPressed = false;
+
+var isBPressed = false;
+
 document.addEventListener("DOMContentLoaded", connectToServer);
 
 var socket;
@@ -35,6 +38,13 @@ function connectToServer() {
         
         });
 
+        socket.on("data to fire ball", function (data) {
+            console.log(data);
+            fireCannonBalls(this.scene, data);
+        
+        });
+
+
         window.onbeforeunload = function () {
             socket.emit("IGoAway", Game.id);
             socket.disconnect();
@@ -60,6 +70,9 @@ socket.emit('messages', message);
     });
 }
 
+
+
+
 function startGame() {
     canvas = document.getElementById("renderCanvas");
     engine = new BABYLON.Engine(canvas, true);
@@ -82,6 +95,9 @@ var createScene = function () {
     var followCamera = createFollowCamera(scene, tank);
     scene.activeCamera = followCamera;
     createLights(scene);
+    scene.enablePhysics();
+
+    
     return scene;
 };
 
@@ -179,6 +195,7 @@ var rotation = function(i, distance) {
     tank.position.y += 2;
     tank.speed = 1;
     tank.frontVector = new BABYLON.Vector3(0, 0, 1);
+    
     tank.state = {
         id: Game.id,
     x: tank.position.x,
@@ -186,7 +203,9 @@ var rotation = function(i, distance) {
     z: tank.position.z,
     rX: tank.rotation.x,
     rY: tank.rotation.y,
-    rZ: tank.rotation.z
+    rZ: tank.rotation.z,
+    f: tank.frontVector,
+    c: tank.checkCollisions = true
 }
 tank.setState = function(data)
 {
@@ -196,6 +215,8 @@ tank.setState = function(data)
     tank.rotation.x = data.rX;
     tank.rotation.y = data.rY;
     tank.rotation.z = data.rZ;
+    tank.frontVector = data.f;
+    tank.checkCollisions = true;
 }
 
 if (data) {
@@ -241,12 +262,49 @@ tank.move = function () {
         tank.state.rX = tank.rotation.x;
         tank.state.rY = tank.rotation.y;
         tank.state.rZ = tank.rotation.z;
+        tank.state.f = tank.frontVector;
+        if(isBPressed) socket.emit("anotherbpressed", tank.state);
         socket.emit("IMoved", tank.state);
     }
 
     }
+
     return tank;
 }
+
+function fireCannonBalls (scene, data) {
+    
+    var cannonBall = new BABYLON.Mesh.CreateSphere("cannonBall", 32, 2, scene);
+    cannonBall.material = new BABYLON.StandardMaterial("Fire", scene);
+    cannonBall.material.diffuseTexture = new BABYLON.Texture("images/Fire.jpg", scene);
+    
+    var pos = data; // x and y from where to shoot //
+
+    cannonBall.position = new BABYLON.Vector3(pos.x, pos.y + 1, pos.z); // still x and y position
+
+    data.f = new BABYLON.Vector3(0, 0, 1);
+    console.log(data.f);
+   
+
+    
+    cannonBall.physicsImpostor = new BABYLON.PhysicsImpostor(cannonBall,
+        BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1 }, scene);
+        var fVector = data.f;
+        cannonBall.position.addInPlace(data.f.multiplyByFloats(5, 5, 5));
+        var force = new BABYLON.Vector3(fVector.x * 100, (fVector.y + .1) * 100, fVector.z * 100);
+        
+        cannonBall.physicsImpostor.applyImpulse(force, cannonBall.getAbsolutePosition());
+
+        setTimeout(function () {
+
+            cannonBall.dispose();
+        }, 3000);
+        
+    return cannonBall;
+} 
+
+
+
 window.addEventListener("resize", function () {
     engine.resize();
 });
@@ -299,6 +357,10 @@ document.addEventListener("keydown", function (event) {
     if (event.key == 'd' || event.key == 'D') {
         isDPressed = true;
     }
+    if (event.key == 'b' || event.key == 'B') {
+        isBPressed = true;
+        socket.emit("bpressed", "b is pressed");
+    }
 
 });
 
@@ -315,16 +377,8 @@ document.addEventListener("keyup", function (event) {
     if (event.key == 'd' || event.key == 'D') {
         isDPressed = false;
     }
-
+    if (event.key == 'b' || event.key == 'B') {
+        isBPressed = false;
+    }
 });
 
-function practice(){
-	var x = document.getElementById("chat").value;
-	console.log(x);
-	return x;
-}
-
-function reply(data){
- var id = document.getElementById("mess");
- id.innerHTML = data;
-}
