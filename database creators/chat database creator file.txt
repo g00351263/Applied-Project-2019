@@ -1,0 +1,123 @@
+-- phpMyAdmin SQL Dump
+-- version 4.7.4
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1:3306
+-- Generation Time: May 03, 2020 at 03:57 AM
+-- Server version: 5.7.19
+-- PHP Version: 5.6.31
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `chat`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `chat`
+--
+
+DROP TABLE IF EXISTS `chat`;
+CREATE TABLE IF NOT EXISTS `chat` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `msg` varchar(255) NOT NULL,
+  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=174 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `chat`
+--
+
+INSERT INTO `chat` (`id`, `name`, `msg`, `date`) VALUES
+(161, 'adsfas', 'asdfasdf', '2020-04-29 09:15:51'),
+(160, 'asdfas', 'asdfas', '2020-04-29 09:15:47'),
+(159, 'asdfas', 'asdfas', '2020-04-29 09:15:33'),
+(158, 'adfas', 'asdfasdf', '2020-04-29 09:15:27'),
+(157, 'asdfas', 'asdfasd', '2020-04-29 09:15:21'),
+(156, 'asdfas', 'asdfasd', '2020-04-29 09:14:30'),
+(155, 'afdasd', 'asdfasdf', '2020-04-29 09:13:35'),
+(154, 'afasd', 'asdfasd', '2020-04-29 09:13:30'),
+(153, 'afasd', 'asdfasd', '2020-04-29 09:05:41'),
+(152, 'Raja', 'asdfasdf', '2020-04-27 08:13:45'),
+(151, 'Raja', 'asdfasdf', '2020-04-27 08:13:21'),
+(150, 'Raja', 'asdfasdf', '2020-04-27 08:12:15'),
+(149, 'Raja', 'asdfasdf', '2020-04-27 08:11:44'),
+(148, 'Raja', 'asdfasdf', '2020-04-27 08:08:56'),
+(147, 'Raja', 'asdfasdf', '2020-04-27 08:08:38'),
+(146, 'Raja', 'asdfasdf', '2020-04-27 08:04:06'),
+(145, 'Raja', 'asdfasdf', '2020-04-27 08:03:08'),
+(144, 'rafa', 'asdfasdf', '2020-04-27 04:40:35'),
+(143, 'rafa', 'asdfasdf', '2020-04-27 04:38:24'),
+(142, 'rafa', 'asdfasdf', '2020-04-27 04:36:43'),
+(141, 'rafa', 'asdfasdf', '2020-04-27 04:35:24'),
+(140, 'rafa', 'asdfasdf', '2020-04-27 04:34:36'),
+(139, 'rafa', 'asdfasdf', '2020-04-27 04:33:33'),
+(138, 'rafa', 'asdfasdf', '2020-04-27 04:32:01'),
+(137, 'rafa', 'asdfasdf', '2020-04-27 04:27:58'),
+(136, 'rafa', 'asdfasdf', '2020-04-27 04:25:49'),
+(135, 'rafa', 'asdfasdf', '2020-04-27 04:22:06'),
+(134, 'rafa', 'asdfasdf', '2020-04-27 04:21:35'),
+(133, 'rafa', 'asdfasdf', '2020-04-27 04:20:05'),
+(132, 'rafa', 'asdfasdf', '2020-04-27 04:19:07'),
+(131, 'rafa', 'asdfasdf', '2020-04-27 04:15:42'),
+(130, 'rafa', 'asdfasdf', '2020-04-27 04:15:08'),
+(129, 'rafa', 'asdfasdf', '2020-04-27 04:13:46'),
+(128, 'rafa', 'asdfasdf', '2020-04-27 04:11:58'),
+(127, 'rafa', 'asdfasdf', '2020-04-27 04:10:49'),
+(126, 'rafa', 'asdfasdf', '2020-04-27 04:09:38'),
+(125, 'rafa', 'asdfasdf', '2020-04-27 04:07:58'),
+(124, 'rafa', 'asdfasdf', '2020-04-27 04:06:30'),
+(123, 'rafa', 'asdfasdf', '2020-04-27 04:05:25'),
+(122, 'rafa', 'asdfasdf', '2020-04-27 04:03:24'),
+(121, 'rafa', 'asdfasdf', '2020-04-27 03:59:43'),
+(120, 'rafa', 'asdfasdf', '2020-04-27 03:59:15'),
+(119, 'rafa', 'asdfasdf', '2020-04-27 03:58:52'),
+(118, 'rafa', 'asdfasdf', '2020-04-27 03:58:27'),
+(117, 'rafa', 'asdfasdf', '2020-04-27 03:57:47'),
+(116, 'rafa', 'asdfasdf', '2020-04-27 03:56:24'),
+(115, 'rafa', 'asdfasdf', '2020-04-27 03:53:31'),
+(114, 'rafa', 'asdfasdf', '2020-04-27 03:52:16'),
+(113, 'rafa', 'asdfasdf', '2020-04-27 03:50:23'),
+(112, 'rafa', 'asdfasdf', '2020-04-27 03:44:20'),
+(111, 'rafa', 'asdfasdf', '2020-04-27 03:42:10'),
+(110, 'rafa', 'asdfasdf', '2020-04-27 03:37:51'),
+(109, 'asdfas', 'sfasd', '2020-04-27 03:37:41'),
+(108, 'asdfas', 'sfasd', '2020-04-27 03:37:15'),
+(107, 'asdfas', 'asdfasdf', '2020-04-27 03:37:06'),
+(106, 'asdfas', 'asdfasdf', '2020-04-27 03:36:35'),
+(105, 'asdfas', 'asdfasdf', '2020-04-27 03:35:01'),
+(104, '', '', '2020-04-27 03:34:56'),
+(103, 'asdfas', 'asdfasd', '2020-04-27 03:34:39'),
+(102, 'asdfas', 'asdfasd', '2020-04-27 03:32:44'),
+(101, 'ra', 'asdfasd', '2020-04-27 03:32:10'),
+(100, 'asd', 'asdfafd', '2020-04-27 03:32:02'),
+(162, 'adsfas', 'asdfasdf', '2020-04-29 09:16:40'),
+(163, 'adfasd', 'asdfasd', '2020-04-29 09:16:48'),
+(164, 'adfasd', 'asdfasd', '2020-04-29 09:17:33'),
+(165, 'asd', 'adfasd', '2020-04-29 09:17:40'),
+(166, 'asd', 'adfasd', '2020-04-29 09:17:58'),
+(167, 'asd', 'adfasd', '2020-04-29 09:30:53'),
+(168, 'asd', 'adfasd', '2020-04-29 09:31:32'),
+(169, 'asd', 'adfasd', '2020-04-29 09:33:03'),
+(170, 'asd', 'adfasd', '2020-04-29 09:34:18'),
+(171, 'asd', 'adfasd', '2020-04-29 09:37:48'),
+(172, 'asd', 'adfasd', '2020-04-29 09:38:09'),
+(173, 'asd', 'adfasd', '2020-04-29 09:39:04');
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
