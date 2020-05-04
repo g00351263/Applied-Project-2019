@@ -2,20 +2,24 @@
 ## <center>Babylon.js Multiplayer 3D Game Development</center>
 
 <p align="center">
-  <img src = "https://github.com/g00351263/Applied-Project-2019/blob/master/screen.jpg" height="1000" width="1000">
+  <img src = "https://github.com/g00351263/Applied-Project-2019/blob/master/database%20creators/screen.jpg" height="1000" width="1000">
 </p>
 
+#
+<font size=20px>Table of contents</font>
+# 
 
-|<p align="center">Table of contents</p> |
------------------------------------------
-|1. [Project Details](#details)|
-|2. [Introduction To Project](#introduction)|
-|3. [Technologies Used](#techused)|
-|4. [Build Requirements](#requirements)|
-|  &nbsp;&nbsp;&nbsp;&nbsp;   4.1 [Single Player Mode](#sp)|
-|  &nbsp;&nbsp;&nbsp;&nbsp;   4.2 [Multi Player Mode](#mp)|
-|5. [Project Github Repository Details](#repo)|
+1.  [Project Details](#details)
 
+2.  [Introduction To Project](#introduction)
+
+3.  [Technologies Used](#techused)
+
+4.  [Build Requirements](#requirements)
+
+5. [Project Github Repository Details](#repo)
+
+#
 # Project Details <a name="details"></a> 
 
 | Project Details   |    |

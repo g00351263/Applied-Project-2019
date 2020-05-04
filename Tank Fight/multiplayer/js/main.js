@@ -1,125 +1,185 @@
-﻿/// <reference path="js/babylon.max.js" />
-/// <reference path="js/socket.js" />
+﻿// Developer : Raja Naseer Ahmed Khan
+// Applied Project Module.
+// Babylon Shooting Car Game
+
+
+// generic methods from babylonjs website //
 var canvas;
 var engine;
 var scene;
-var isWPressed = false;
-var isSPressed = false;
-var isAPressed = false;
-var isDPressed = false;
 
-var isBPressed = false;
+// keys are set to false once not pressed down //
+var wForForward = false; // forward 
+var sForBackward = false; // back
+var aForLeft = false;  // left
+var dforRight = false;  // right
+var bForBall = false; // b for shooting
 
+// event listner from html
 document.addEventListener("DOMContentLoaded", connectToServer);
 
-var socket;
-var Game = {};
-var enemies = {};
+var socket; // socket reference to connect multiple clients to server
 
+// MVCs for game modeling //
+var Game = {}; // storing client game detailsin object
+var enemies = {}; // storing the enemies details to render
+
+
+// generic socket io method from socket.io to create the sockets connection
 function connectToServer() {
-    socket = io.connect("http://localhost:3000", { transports: ['websocket'], upgrade:false });
-    socket.on("connect", function () {
+    
+	// ports can be set here //
+	socket = io.connect("http://localhost:3000", { transports: ['websocket'], upgrade:false });
+    
+	// incoming //
+	socket.on("connect", function () {
+		
+		// if reply is success from server //
         console.log("connction estaplished successfully");
         
-        socket.on("GetYourID", function (data) {
-            Game.id = data.id;
-            startGame();
-
-            socket.emit("ThankYou", {});
+		// incoming // server sends id
+        socket.on("uniqueSocketId", function (data) { 
+            
+			// id stored in game object for modeling details
+			Game.id = data.id;
+			
+			// new details assigned to player and game starts //
+            newGame(); //startGame
+			
+			// outgoing // handshake with confirmation
+            socket.emit("Appreciated", {}); 
         });
 
-        socket.on("AnotherTankCreated", function (data) {
-            createTank(scene, data);
+// incoming // making the car by server assigned location
+        socket.on("enemiesCar", function (data) { 
+            makeCar(scene, data);
         });
-
-        socket.on("AnotherTankMoved", function (data) {
-            var tank = enemies[data.id];
-            tank.setState(data);
+		
+// incoming // getting all the details of position of other player connected
+        socket.on("enemiesPosition", function (data) { 
+			// storing enemies details in array, as can be many players need their own details saved
+            var car = enemies[data.id];
+			
+			// model view model to get the details for the enemies rendered
+            car.setState(data); // tank.setState
         
         });
 
-        socket.on("data to fire ball", function (data) {
-            console.log(data);
+// incoming // getting details of x and y position of car to fire the ball
+        socket.on("details to fire ball", function (data) { 
+            console.log(data); // log for debug
+			
+			// method that creates balls shooting
             fireCannonBalls(this.scene, data);
         
         });
 
-
+		// when windows is closed this method triggers and sends details to server to remove game instance
         window.onbeforeunload = function () {
-            socket.emit("IGoAway", Game.id);
-            socket.disconnect();
+				// outgoing //
+            socket.emit("Left", Game.id);  // sending id to delete from server
+            socket.disconnect();// generic socket disconnect method
         }
 
-        socket.on("AnotherWentAway", function (data) {
+// incoming // delete all enemies which are leaving game, as they needed to deleted from rendering and array
+        socket.on("enemiesLeft", function (data) { 
             
-            var tank = enemies[data.id];
-            tank.dispose();
+            var car = enemies[data.id];
+            car.dispose();
             delete enemies[data.id];
         
         });
-		socket.emit('join', 'Hello World from client');
-});
-socket.on('broad', function(data) {
-    $('#future').append(data+ "<br/>");
-});
+		
+			// outgoing // this tells the server that client trying to connect
+		socket.emit('join', 'Client Joined');
+	});
 
-$('form').submit(function(e){
-e.preventDefault();
-var message = $('#chat_input').val();
-socket.emit('messages', message);
-    });
-}
+// incoming // this is used to communicate in chat messages
+	socket.on('broad', function(data) {
+		
+		//jquery getting the details from element id in html
+		$('#future').append(data+ "<br/>");
+	});
+
+	// when user hits send this fuction triggers and send the elements from id as text to server
+	$('form').submit(function(e){
+		e.preventDefault();
+		var message = $('#chat_input').val();
+		
+			// outgoing // this is to send message to server for displaying to other clients
+		socket.emit('messages', message);
+		});
+	}
 
 
 
-
-function startGame() {
+// function to start new game //
+function newGame() {
+	
+	// html element id to display canvas
     canvas = document.getElementById("renderCanvas");
+	
+	// creating babylon eninge on canvas
     engine = new BABYLON.Engine(canvas, true);
-    scene = createScene();
+    
+	// creating the graphics or scene //
+	scene = makeGUI();
+	
+	// mouse settings on canvas 
     modifySettings();
-    var tank = scene.getMeshByName("HeroTank");
+	
+	// getting the mesh with id name 
+    var car = scene.getMeshByName("Herocar");
+	
+	// rendering function to render car and assign moves
     var toRender = function () {
-        tank.move();
+        car.move();
         scene.render();
     }
     engine.runRenderLoop(toRender);
 }
 
-var createScene = function () {
+// function to render scene
+var makeGUI = function () { 
     
     var scene = new BABYLON.Scene(engine);
-    var ground = CreateGround(scene);
-    var freeCamera = createFreeCamera(scene);
-    var tank = createTank(scene);
-    var followCamera = createFollowCamera(scene, tank);
-    scene.activeCamera = followCamera;
-    createLights(scene);
-    scene.enablePhysics();
+    var ground = makeTerrain(scene); // making ground with heightmap
+    var freeCamera = cameraWithThePlayer(scene); // assign cammera
+    var car = makeCar(scene); // make the car
+    var followCamera = stalkingCamera(scene, car); // creaete camera which will follow car
+    scene.activeCamera = followCamera; // setting which camera is active
+    setLightning(scene); // lights
+    scene.enablePhysics(); // enable the real life physics to make ground like earth
 
-    
     return scene;
 };
 
-function CreateGround(scene) {
+// making ground
+function makeTerrain(scene) { 
+
+	// size of ground and image file
     var ground = new BABYLON.Mesh.CreateGroundFromHeightMap("ground", "images/hmap1.png", 2000, 2000, 20, 0, 1000, scene, false, OnGroundCreated);
-    console.log(ground);
+    
+	// once ground is made this function will assign materials and texture, also enables physics
     function OnGroundCreated() {
         var groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
         groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
         ground.material = groundMaterial;
         ground.checkCollisions = true;
-        console.log(ground);
     }
     return ground;
 }
 
-function createLights(scene) {
+
+// setting lightining to the scene
+function setLightning(scene) { //createLights
     var light0 = new BABYLON.DirectionalLight("dir0", new BABYLON.Vector3(-.1, -1, 0), scene);
     var light1 = new BABYLON.DirectionalLight("dir1", new BABYLON.Vector3(-1, -1, 0), scene);
 
 }
-function createFreeCamera(scene) {
+
+// function which will move camera according to keys pressed hence car and camera position move together
+function cameraWithThePlayer(scene) { //createFreeCamera
     var camera = new BABYLON.FreeCamera("freeCamera", new BABYLON.Vector3(0, 0, 0), scene);
     camera.attachControl(canvas);
     camera.position.y = 50;
@@ -137,7 +197,7 @@ function createFreeCamera(scene) {
     return camera;
 }
 
-function createFollowCamera(scene, target) {
+function stalkingCamera(scene, target) { //createFollowCamera
     var camera = new BABYLON.FollowCamera("tankFollowCamera", target.position, scene, target);
     camera.radius = 20; // how far from the object to follow
     camera.heightOffset = 4; // how high above the object to place the camera
@@ -146,7 +206,10 @@ function createFollowCamera(scene, target) {
     camera.maxCameraSpeed = 5; // speed limit
     return camera;
 }
-function createTank(scene, data) {
+
+
+// function which will make car
+function makeCar(scene, data) { //createTank
 
     /////////////////////////////////////////
     	//Array of paths to construct extrusion
@@ -161,6 +224,7 @@ function createTank(scene, data) {
        new BABYLON.Vector3(-1, 1, 0)
 ];
 
+// all the above meshed pushed into 1 
 myShape.push(myShape[0]);
 
 var myPath = [
@@ -177,7 +241,7 @@ var scaling = function(i, distance) {
 };
 
 //Create custom extrusion with updatable parameter set to true for later changes
-var tank = BABYLON.MeshBuilder.ExtrudeShapeCustom("HeroTank", {shape: myShape, path: myPath, scaleFunction: scaling, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
+var car = BABYLON.MeshBuilder.ExtrudeShapeCustom("Herocar", {shape: myShape, path: myPath, scaleFunction: scaling, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
 
 var scaling2 = function(i, distance) {
    return 1 + 0.2*distance;
@@ -187,91 +251,115 @@ var rotation = function(i, distance) {
    return distance * Math.PI / 108;
 };	
     //////////////////////////////////////////////
-    //var tank = new BABYLON.MeshBuilder.CreateBox("HeroTank", { height: 1, depth: 6, width: 6 }, scene);
-    var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
-    tankMaterial.diffuseColor = new BABYLON.Color3.Red;
-    tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
-    tank.material = tankMaterial;
-    tank.position.y += 2;
-    tank.speed = 1;
-    tank.frontVector = new BABYLON.Vector3(0, 0, 1);
+    //var car = new BABYLON.MeshBuilder.CreateBox("Herocar", { height: 1, depth: 6, width: 6 }, scene);
+    var carMaterial = new BABYLON.StandardMaterial("carMaterial", scene);
+    carMaterial.diffuseColor = new BABYLON.Color3.Red;
+    carMaterial.emissiveColor = new BABYLON.Color3.Blue;
+    car.material = carMaterial;
+    car.position.y += 2;
+    car.speed = 1;
+    car.frontVector = new BABYLON.Vector3(0, 0, 1);
     
-    tank.state = {
+	
+	// we will use this for communicating the object with details to server
+    car.state = {
         id: Game.id,
-    x: tank.position.x,
-    y: tank.position.y,
-    z: tank.position.z,
-    rX: tank.rotation.x,
-    rY: tank.rotation.y,
-    rZ: tank.rotation.z,
-    f: tank.frontVector,
-    c: tank.checkCollisions = true
-}
-tank.setState = function(data)
-{
-    tank.position.x = data.x;
-    tank.position.y = data.y;
-    tank.position.z = data.z;
-    tank.rotation.x = data.rX;
-    tank.rotation.y = data.rY;
-    tank.rotation.z = data.rZ;
-    tank.frontVector = data.f;
-    tank.checkCollisions = true;
+    x: car.position.x,
+    y: car.position.y,
+    z: car.position.z,
+    rX: car.rotation.x,
+    rY: car.rotation.y,
+    rZ: car.rotation.z,
+    f: car.frontVector,
+    c: car.checkCollisions = true
 }
 
+// we will use this mvx to get details of enemy and render
+car.setState = function(data)
+{
+    car.position.x = data.x;
+    car.position.y = data.y;
+    car.position.z = data.z;
+    car.rotation.x = data.rX;
+    car.rotation.y = data.rY;
+    car.rotation.z = data.rZ;
+    car.frontVector = data.f;
+    car.checkCollisions = true;
+}
+
+
+// this will pass data when we have enemies data available
 if (data) {
-    tankMaterial.diffuseColor = new BABYLON.Color3.Yellow;
-    tankMaterial.emissiveColor = new BABYLON.Color3.Yellow;
-    enemies[data.id] = tank;
-    tank.setState(data);
+    carMaterial.diffuseColor = new BABYLON.Color3.Yellow;
+    carMaterial.emissiveColor = new BABYLON.Color3.Yellow;
+    enemies[data.id] = car;
+    car.setState(data);
 }
+
+// else it will send only our own client data
 else {
-    socket.emit("IWasCreated", tank.state);
+    socket.emit("developed", car.state);
 }
-tank.move = function () {
+
+// function to move car
+car.move = function () {
+	
+	// this variable is used to inform server when key is pressed, to save traffic
     var notifyServer = false;
-        var yMovement = 0;
-        if (tank.position.y > 2) {
-        tank.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
-        notifyServer = true;
+        
+		
+		var yMovement = 0;
+        
+		if (car.position.y > 2) {
+			car.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
+			notifyServer = true;
         }
         
-        if (isWPressed) {
-        tank.moveWithCollisions(tank.frontVector.multiplyByFloats(tank.speed, tank.speed, tank.speed));
-        notifyServer = true;
+		// moving forward
+		if (wForForward) {
+			
+			// enabling the collision and moving with the speed provided
+			car.moveWithCollisions(car.frontVector.multiplyByFloats(car.speed, car.speed, car.speed));
+			notifyServer = true;
         }
-        if (isSPressed) {
-            tank.moveWithCollisions(tank.frontVector.multiplyByFloats(-1 * tank.speed, -1 * tank.speed, -1 * tank.speed));
-        notifyServer = true;    
-    }
-        if (isAPressed) {
-            tank.rotation.y -= .1;
-            tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y))
+        if (sForBackward) {
+            car.moveWithCollisions(car.frontVector.multiplyByFloats(-1 * car.speed, -1 * car.speed, -1 * car.speed));
+			notifyServer = true;    
+		}
+		
+		// left and right turn with cos and sin calcuation to move cars front point vector just like car is steering in left and right moving front vector along the keys pressed
+        if (aForLeft) {
+            car.rotation.y -= .1;
+            car.frontVector = new BABYLON.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y))
         notifyServer = true;
-    }
-        if (isDPressed) {
-            tank.rotation.y += .1;
-            tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y))
+		}
+        if (dforRight) {
+            car.rotation.y += .1;
+            car.frontVector = new BABYLON.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y))
         notifyServer = true;
         }
     
+	// if keys pressed this details will be sent to server
     if (notifyServer) {
-        tank.state.x = tank.position.x;
-        tank.state.y = tank.position.y;
-        tank.state.z = tank.position.z;
-        tank.state.rX = tank.rotation.x;
-        tank.state.rY = tank.rotation.y;
-        tank.state.rZ = tank.rotation.z;
-        tank.state.f = tank.frontVector;
-        if(isBPressed) socket.emit("anotherbpressed", tank.state);
-        socket.emit("IMoved", tank.state);
+        car.state.x = car.position.x;
+        car.state.y = car.position.y;
+        car.state.z = car.position.z;
+        car.state.rX = car.rotation.x;
+        car.state.rY = car.rotation.y;
+        car.state.rZ = car.rotation.z;
+        car.state.f = car.frontVector;
+		
+		// if b pressed shooting ball details sent to server with car details to render ball
+        if(bForBall) socket.emit("anotherbpressed", car.state);
+        socket.emit("pos", car.state);
+		}
     }
 
-    }
-
-    return tank;
+    return car;
 }
 
+
+// function to fire balls
 function fireCannonBalls (scene, data) {
     
     var cannonBall = new BABYLON.Mesh.CreateSphere("cannonBall", 32, 2, scene);
@@ -304,11 +392,13 @@ function fireCannonBalls (scene, data) {
 } 
 
 
-
+// listening to resize of the screen
 window.addEventListener("resize", function () {
     engine.resize();
 });
 
+
+// getting the mouse to be clicked on screen
 function modifySettings() {
     scene.onPointerDown = function () {
         if (!scene.alreadyLocked) {
@@ -343,42 +433,47 @@ function modifySettings() {
 
 
 
+// event listners when keys are  pressed and set to true //
 
 document.addEventListener("keydown", function (event) {
     if (event.key == 'w' || event.key == 'W') {
-        isWPressed = true;
+        wForForward = true;
     }
     if (event.key == 's' || event.key == 'S') {
-        isSPressed = true;
+        sForBackward = true;
     }
     if (event.key == 'a' || event.key == 'A') {
-        isAPressed = true;
+        aForLeft = true;
     }
     if (event.key == 'd' || event.key == 'D') {
-        isDPressed = true;
+        dforRight = true;
     }
     if (event.key == 'b' || event.key == 'B') {
-        isBPressed = true;
+        bForBall = true;
+		
+			// outgoing // checking if pressing the b sending signal to server
         socket.emit("bpressed", "b is pressed");
     }
 
 });
 
+
+// event listners when keys are not pressed and set to false //
 document.addEventListener("keyup", function (event) {
     if (event.key == 'w' || event.key == 'W') {
-        isWPressed = false;
+        wForForward = false;
     }
     if (event.key == 's' || event.key == 'S') {
-        isSPressed = false;
+        sForBackward = false;
     }
     if (event.key == 'a' || event.key == 'A') {
-        isAPressed = false;
+        aForLeft = false;
     }
     if (event.key == 'd' || event.key == 'D') {
-        isDPressed = false;
+        dforRight = false;
     }
     if (event.key == 'b' || event.key == 'B') {
-        isBPressed = false;
+        bForBall = false;
     }
 });
 
