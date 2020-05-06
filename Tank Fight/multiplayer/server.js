@@ -60,13 +60,13 @@ io.on("connection", function (socket) {
 		
 		// sending the car details to all clients as broadcast to render the car to others aswell and keep them updated with location of each other.
         socket.broadcast.emit("enemiesCar", details); // to everyone
-        
+
 		//storing details of other cars in array and sending it client to render in his browser
         for (key in cars) {
             if (key == socket.id) continue;
-			
 			// outgoing enemies details to client
             socket.emit("enemiesCar", cars[key]); // to client only
+			
         }
         
         
@@ -77,6 +77,7 @@ io.on("connection", function (socket) {
     socket.on("pos", function (details) {
         cars[details.id] = details;
         socket.broadcast.emit("enemiesPosition", details); // everyone
+		
         
     });
 
@@ -92,13 +93,13 @@ io.on("connection", function (socket) {
         socket.emit("details to fire ball", details);
 
     });
-
+	
 	// incoming // chat message windowd to broadcast, recieve, and send chat //
     socket.on('join', function(details) {
         console.log(details);
         socket.on('messages', function(details) {
             socket.emit('broad', details);
-            socket.broadcast.emit('broad',details);
+            socket.broadcast.emit('broad',"<b style='color:blue;'>" + details + "</b>");
         });
     });
 });

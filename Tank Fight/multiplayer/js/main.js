@@ -23,7 +23,7 @@ var socket; // socket reference to connect multiple clients to server
 // MVCs for game modeling //
 var Game = {}; // storing client game detailsin object
 var enemies = {}; // storing the enemies details to render
-
+var sid;
 
 // generic socket io method from socket.io to create the sockets connection
 function connectToServer() {
@@ -42,7 +42,7 @@ function connectToServer() {
             
 			// id stored in game object for modeling details
 			Game.id = data.id;
-			
+			sid = data.id;
 			// new details assigned to player and game starts //
             newGame(); //startGame
 			
@@ -98,17 +98,20 @@ function connectToServer() {
 	socket.on('broad', function(data) {
 		
 		//jquery getting the details from element id in html
-		$('#future').append(data+ "<br/>");
+		$('#future').append("<b style='color:green;'>" + data + "</b><br/>");
 	});
 
 	// when user hits send this fuction triggers and send the elements from id as text to server
 	$('form').submit(function(e){
-		e.preventDefault();
+		e.preventDefault();		
 		var message = $('#chat_input').val();
-		
+		var name = $('#name').val();
 			// outgoing // this is to send message to server for displaying to other clients
-		socket.emit('messages', message);
+		socket.emit('messages', "<font style='color:red;'>" + name +  "</font> <b>:</b> " + message);
+
 		});
+				
+
 	}
 
 
