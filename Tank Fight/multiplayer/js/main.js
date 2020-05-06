@@ -29,7 +29,7 @@ var sid;
 function connectToServer() {
     
 	// ports can be set here //
-	socket = io.connect("http://localhost:3000", { transports: ['websocket'], upgrade:false });
+	socket = io.connect( { transports: ['websocket'], upgrade:false });
     
 	// incoming //
 	socket.on("connect", function () {
@@ -293,8 +293,8 @@ car.setState = function(data)
 
 // this will pass data when we have enemies data available
 if (data) {
-    carMaterial.diffuseColor = new BABYLON.Color3.Yellow;
-    carMaterial.emissiveColor = new BABYLON.Color3.Yellow;
+    carMaterial.diffuseColor = new BABYLON.Color3.Red;
+    carMaterial.emissiveColor = new BABYLON.Color3.Red;
     enemies[data.id] = car;
     car.setState(data);
 }
