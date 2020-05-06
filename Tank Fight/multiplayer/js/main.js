@@ -370,7 +370,7 @@ function fireCannonBalls (scene, data) {
 
     cannonBall.position = new BABYLON.Vector3(pos.x, pos.y + 1, pos.z); // still x and y position
 
-    data.f = new BABYLON.Vector3(0, 0, 1);
+    data.f = new BABYLON.Vector3(data.f.x,data.f.y,data.f.z);
     console.log(data.f);
    
 
