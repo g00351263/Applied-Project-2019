@@ -27,7 +27,7 @@
 
    6.1 [How To Run Single Player Code](#cs)
 
-7. [Multi Player Mode](#mp)
+7. [Multi Player Mode](#m)
 
    6.1 [How To Run Multi Player Code](#cm)
 
@@ -110,11 +110,11 @@ Ground is made of Heightmap, which decides the low and high of the ground by the
 
 # 
 
-#### For Multiplayer: <a name="cm"></a>
+#### For Multiplayer: <a name="m"></a>
 # 
 <div style="text-align: justify">Live demo of multiplayer game running at link below but to be <span style="color: red">noted that multiplayer game is the simple version of single player</span> where you instantiate the new players with every new browser but don't have full functionality like single player mode. you can chat, shoot and move around the car on the ground and can see other players movement and shooting, can't hit each other, nor have animated character or teleportal, as it requires lots of time to figure out calcuation of each object to be appeared to other players, Hence, this feature will be enhanced in 2nd release at some future point. As we Ran out of time due to present situation of Covid-19.</div> http://carmultiplayer.herokuapp.com/
 
-### How to Run Multiplayer Game With Code Provided: <a name="codem"></a>
+### How to Run Multiplayer Game With Code Provided: <a name="cm"></a>
 # 
 
 1) Download the multiplayer folder and can place anywhere in hard drive. Click Link to multi player -> [Multi Player](https://github.com/g00351263/Applied-Project-2019/tree/master/Tank%20Fight/multiplayer)
