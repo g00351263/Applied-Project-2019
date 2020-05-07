@@ -41,18 +41,23 @@ class AnimatedPlayer {
         this.frontVector = new BABYLON.Vector3(0, 0, -1);
         animatedPlayerMesh.AnimatedPlayer = this;
 
+		// movement assigned to any object who is referencing to itself
         if (movement)
             this.movement = movement;
         else
             this.movement = 1;
-
+		
+		// this size of the character
         if (scaling) {
             this.scaling = scaling;
             this.animatedPlayerMesh.scaling = new BABYLON.Vector3(this.scaling, this.scaling, this.scaling);
         }
+		
+		// scalling size to 1
         else
             this.scaling = 1; // size of the animated character
-
+		
+		// sometimes javascript doesn'get value and errors is undefined
         if (AnimatedPlayer.boundingBoxParameters == undefined) { // box around the animated character
             AnimatedPlayer.boundingBoxParameters = this.collisionBoxDimension();
         }
@@ -168,6 +173,8 @@ class AnimatedPlayer {
             }
         }
     }
+	
+	// getting the position of animated character and adjusting it to imaginary collision box
     adjustYPosition() {
         var scene = this.scene;
         var origin = new BABYLON.Vector3(this.animatedPlayerMesh.position.x, 1000, this.animatedPlayerMesh.position.z);
@@ -185,6 +192,7 @@ class AnimatedPlayer {
         return groundHeight;
     }
 
+	/// moving the position of box xz with the character animations
     adjustXZPosition() {
         this.animatedPlayerMesh.position.x = this.imaginaryBox.position.x;
         this.animatedPlayerMesh.position.z = this.imaginaryBox.position.z;
@@ -400,6 +408,7 @@ var buildSceneOne = function () {
 	
 
 
+// model tree which i made with diffferent meshes
 QuickTreeGenerator = function(sizeBranch, sizeTrunk, radius, trunkMaterial, leafMaterial, scene) {
 
     var tree = new BABYLON.Mesh("tree", scene);
@@ -499,7 +508,7 @@ QuickTreeGenerator = function(sizeBranch, sizeTrunk, radius, trunkMaterial, leaf
 	tree.position.x = 30;
 	
 	    // Skybox
-    // Skybox
+    // Skybox sky cloud box effect
     var skybox = BABYLON.Mesh.CreateBox("skyBox", 1000.0, scene);
     var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
     skyboxMaterial.backFaceCulling = false;
@@ -509,14 +518,11 @@ QuickTreeGenerator = function(sizeBranch, sizeTrunk, radius, trunkMaterial, leaf
     skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
     skyboxMaterial.disableLighting = true;
     skybox.material = skyboxMaterial;
-	
-	
-
-	
-
     return scene;
 };
 
+
+// different scenes to be rendered, one of them is this
 var theSceneTwo = function () {
     //console.log("ActiveScene is : " + Game.activeScene);
     Game.scenes[Game.activeScene] = createSecondScene();
@@ -524,6 +530,8 @@ var theSceneTwo = function () {
     modifySettings(scene);
     var tank = scene.getMeshByName("heroTank");
 	 var cr = scene.getMeshByName("cross");
+	 
+	 // rendering the car in each scene
     scene.toRender = function () {
         tank.move();
         tank.fireCannonBalls(scene);
@@ -627,6 +635,8 @@ function loadSounds(scene) {
 
 }
 
+
+// loading the image of aim cross in front of the dude
 function loadCrossHair(scene) {
     var impact = BABYLON.Mesh.CreateBox("box", .01, scene);
 
@@ -639,6 +649,8 @@ function loadCrossHair(scene) {
     impact.material.diffuseTexture = new BABYLON.Texture("images/gunaims.png", scene);
     impact.material.diffuseTexture.hasAlpha = true;
 }
+
+// assets manager uses the all assets to render properly before playing or displaying
 function configureAssetsManager(scene) {
     scene.assets = {};
     var assetsManager = new BABYLON.AssetsManager(scene);
@@ -705,6 +717,8 @@ function createArcRotateCamera(scene,target)
     var camera = new BABYLON.ArcRotateCamera("arc", 0, 1, 50, target, scene);
     return camera;
 }
+
+// camera which was rotating round and roung but i removed it
 function animateArcRotateCamera(camera)
 {
     var animationRotateAlpha = new BABYLON.Animation("myAnimation", "alpha", 10, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
@@ -789,7 +803,7 @@ function createTank(scene, data) {
     };
     
     //Create custom extrusion with updatable parameter set to true for later changes
-    var tank = BABYLON.MeshBuilder.ExtrudeShapeCustom("heroTank", {shape: myShape, path: myPath, scaleFunction: scaling, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
+    var car = BABYLON.MeshBuilder.ExtrudeShapeCustom("heroTank", {shape: myShape, path: myPath, scaleFunction: scaling, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
     
     var scaling2 = function(i, distance) {
        return 1 + 0.2*distance;
@@ -800,7 +814,7 @@ function createTank(scene, data) {
     };	
 
 ///////////////
-	//var tank = new BABYLON.MeshBuilder.CreateBox("heroTank", options, scene);
+	//var car = new BABYLON.MeshBuilder.CreateBox("heroTank", options, scene);
     
 	var cros = new BABYLON.MeshBuilder.CreateBox("cross",  {height: 0, width: .1, depth: .1}, scene);
 	cros.isPickable = false;
@@ -808,33 +822,33 @@ function createTank(scene, data) {
 	cros.material.diffuseTexture = new BABYLON.Texture("images/gunaims.png", scene);
     cros.material.diffuseTexture.hasAlpha = true;
 	
-	tank.position.z = 10;
-	tank.position.x = 20;
+	car.position.z = 10;
+	car.position.x = 20;
 	cros.position.z = +15;
 	cros.position.x = +30;
 	//var tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
     
     if(fPressed){
-        tank.position.y += 2;
+        car.position.y += 2;
         console.log("f pressed");
     }
 
     if(xPressed){
         console.log("x Pressed");
-        tank.position.y -=2;
+        car.position.y -=2;
     }
 	
 	//tankMaterial.diffuseColor = new BABYLON.Color3.Red;
     
 	//tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
     
-	//tank.material = tankMaterial;
-    tank.material = mat
-	tank.position.y += 12;
+	//car.material = tankMaterial;
+    car.material = mat
+	car.position.y += 12;
     
-	tank.movement = 1;
+	car.movement = 1;
     
-	tank.frontVector = new BABYLON.Vector3(0, 0, 1);
+	car.frontVector = new BABYLON.Vector3(0, 0, 1);
 	
 	cros.material = mat
 	cros.position.y += 2;
@@ -843,46 +857,46 @@ function createTank(scene, data) {
     
 	cros.frontVector = new BABYLON.Vector3(0, 0, 1);
 	
-	tank.canFireCannonBalls = true;
+	car.canFireCannonBalls = true;
     
-	tank.canFireLaser = true;
+	car.canFireLaser = true;
 	////////////////////
 	
 	//////////////////////
-		// creating the tank move //
-    tank.move = function () {	
+		// creating the car move //
+    car.move = function () {	
         scene.activeCamera = scene.activeCameras[0];
         if (scene.activeCamera != scene.followCameraTank) {
             return;
         }
         var yMovement = 0;
-        if (tank.position.y > 2) {
-            tank.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
+        if (car.position.y > 2) {
+            car.moveWithCollisions(new BABYLON.Vector3(0, -2, 0));
         }
-				// move tank according to key press events//
+				// move car according to key press events//
         if (moveForwardW) {
-            tank.moveWithCollisions(tank.frontVector.multiplyByFloats(tank.movement, tank.movement, tank.movement));
+            car.moveWithCollisions(car.frontVector.multiplyByFloats(car.movement, car.movement, car.movement));
         }
 		
 		// car moving backward
         if (moveBackwardS) {
-            tank.moveWithCollisions(tank.frontVector.multiplyByFloats(-1 * tank.movement, -1 * tank.movement, -1 * tank.movement));	       
+            car.moveWithCollisions(car.frontVector.multiplyByFloats(-1 * car.movement, -1 * car.movement, -1 * car.movement));	       
         }
 		// this thing counting the sin and cos to steer like car when turning left
         if (moveLeftA) {
-            tank.rotation.y -= .1;
-            tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y))
+            car.rotation.y -= .1;
+            car.frontVector = new BABYLON.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y))
 		}
 		// this thing counting the sin and cos to steer like car when turning rigth
         if (moveRightD) {
-            tank.rotation.y += .1;
-            tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y))
+            car.rotation.y += .1;
+            car.frontVector = new BABYLON.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y))
         }
         if(fPressed){
-            tank.position.y += 2;
+            car.position.y += 2;
         }
         if(xPressed){
-            tank.position.y -=2;
+            car.position.y -=2;
         }
 
     }
@@ -890,23 +904,23 @@ function createTank(scene, data) {
 	// this function make cross or aim in front of car
 	cros.move = function (scene) {
 	    this.scene = Game.activeScene;
-        var pos = tank.position;
+        var pos = car.position;
 
         cros.position = new BABYLON.Vector3(pos.x, pos.y + 3, pos.z);
-        cros.position.addInPlace(tank.frontVector.multiplyByFloats(5, 5, 5));
+        cros.position.addInPlace(car.frontVector.multiplyByFloats(5, 5, 5));
     }
 	// function to fire cannon balls //
-    tank.fireCannonBalls = function (scene) {
+    car.fireCannonBalls = function (scene) {
 
-        var tank = this;
+        var car = this;
         if (!fireBallB) return;
-        if (!tank.canFireCannonBalls) return;
-        tank.canFireCannonBalls = false;
+        if (!car.canFireCannonBalls) return;
+        car.canFireCannonBalls = false;
 
 			// function to disappear the cannon balls after 3 seconds//
 
         setTimeout(function () {
-            tank.canFireCannonBalls = true;
+            car.canFireCannonBalls = true;
         }, 500);
 
         scene.assets["cannonSound"].play();
@@ -916,14 +930,14 @@ function createTank(scene, data) {
         cannonBall.material.diffuseTexture = new BABYLON.Texture("images/Fire.jpg", scene);
 
 
-        var pos = tank.position;
+        var pos = car.position;
 
         cannonBall.position = new BABYLON.Vector3(pos.x, pos.y + 1, pos.z);
-        cannonBall.position.addInPlace(tank.frontVector.multiplyByFloats(5, 5, 5));
+        cannonBall.position.addInPlace(car.frontVector.multiplyByFloats(5, 5, 5));
 
         cannonBall.physicsImpostor = new BABYLON.PhysicsImpostor(cannonBall,
         BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1 }, scene);
-        var fVector = tank.frontVector;
+        var fVector = car.frontVector;
         var force = new BABYLON.Vector3(fVector.x * 100, (fVector.y + .1) * 100, fVector.z * 100);
         cannonBall.physicsImpostor.applyImpulse(force, cannonBall.getAbsolutePosition());
 
@@ -952,21 +966,21 @@ function createTank(scene, data) {
 
 			// function to fire laser beam //
 
-    tank.fireLaserBeams = function (scene) {
-        var tank = this;
+    car.fireLaserBeams = function (scene) {
+        var car = this;
         if (!fireRayR) return;
-        if (!tank.canFireLaser) return;
-        tank.canFireLaser = false;
+        if (!car.canFireLaser) return;
+        car.canFireLaser = false;
 
 						//function to disappear laser beam after 5 seconds//
 
         setTimeout(function () {
-            tank.canFireLaser = true;
+            car.canFireLaser = true;
         }, 500);
 
         scene.assets["laserSound"].play();
-        var origin = tank.position;
-        var direction = new BABYLON.Vector3(tank.frontVector.x, tank.frontVector.y + .1, tank.frontVector.z);
+        var origin = car.position;
+        var direction = new BABYLON.Vector3(car.frontVector.x, car.frontVector.y + .1, car.frontVector.z);
 
         var ray = new BABYLON.Ray(origin, direction, 1000);
         var rayHelper = new BABYLON.RayHelper(ray);
@@ -999,7 +1013,7 @@ function createTank(scene, data) {
 		    
 
     }
-    return tank;
+    return car;
 }
 
 
