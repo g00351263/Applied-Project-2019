@@ -1,6 +1,6 @@
 ## <center>Project Name</center>
 ## <center>Babylon.js Multiplayer 3D Game Development</center>
-
+[<center>Click Here For Project Video On Youtube</center>](https://youtu.be/_oOI20k4gz8)
 <p align="center">
   <img src = "https://github.com/g00351263/Applied-Project-2019/blob/master/database%20creators/screen.jpg" height="1000" width="1000">
 </p>
@@ -47,7 +47,7 @@
 
 #   
 ### Project Introduction <a name="introduction"></a>
-In this project we will use the said Babylon JavaScript engine and we will make a 3D game which can be run on any browser(multi-platform). This game will be using mouse and keyboard keys to move characters around the ground and shoot cannon, laser, and bullets projectile to destroy other meshes(players,enemies). We will also use the socket.io and node express server to run and create multiplayer mode to instantiate multiple player objects. Also, this project will be stored on Heroku.com for hosting online and we will get an online link of cloud storage at Heroku. The main purpose and our goal in this project will be to enhance our understanding to develop complete system to production by using any suitable methodology of system development life cycle (SDLC) i.e. agile, waterfall models.
+In this project we will use the said Babylon JavaScript engine and we will make a 3D game which can be run on any browser(multi-platform). This game will be using mouse and keyboard keys to move characters around the ground and shoot cannon, laser, and bullets projectile to destroy other meshes(players, enemies). We will also use the socket.io and node express server to run and create multiplayer mode to instantiate multiple player objects. Also, this project will be stored on Heroku.com for hosting online and we will get an online link of cloud storage at Heroku. The main purpose and our goal in this project will be to enhance our understanding to develop complete system to production by using any suitable methodology of system development life cycle (SDLC) i.e. agile, waterfall models.
 
 # 
 ### Technologies Used <a name="techused"></a>
@@ -87,20 +87,20 @@ In this project we will use the said Babylon JavaScript engine and we will make 
 # 
 #### For Single Player: <a name="sp"></a>
 # 
-<div style="text-align: justify">In Single Player mode you have a scene with 2 scenes can be scene within. First Scene is wheer you can play game, Second scene is you can only see random point of game moving objects.
-In the game if you press t/T you will have control of car, you can press b to shoot ball and hit other animated character and can see the score on screen increasing, r to shoot raycast, press f to fly and it decreses the speed of car little bit as it is not in contact with ground collision and gravity. move the car around with w,a,s,d keys. There is a huge cylinder shaped object in middle of game, if you go into it, scene will change and i called it teleportal to another world. 
+<div style="text-align: justify">In Single Player mode you have a scene with 2 scenes can be scene within. First Scene is where you can play game, second scene is you can only see random point of game moving objects.
+In the game if you press t/T you will have control of car, you can press b to shoot ball and hit other animated character and can see the score on screen increasing, r to shoot ray cast, press f to fly and it decreases the speed of car little bit as it is not in contact with ground collision and gravity. move the car around with w,a,s,d keys. There is a huge cylinder-shaped object in middle of game, if you go into it, scene will change, and I called it teleportal to another world. 
 
-Also you can press y to get control of animated character. That animated character can be move forward and backward with keys w,s but turning is by using mouse to provide the experienc of firt shooter game. it can shoot bullet to other animated characters to.
+Also, you can press y to get control of animated character. That animated character can be move forward and backward with keys w,s but turning is by using mouse to provide the experience of first shooter game. it can shoot bullet to other animated characters to.
 
-Check the sky made it using the skybox and diffusing the photo of sky.
+Check the sky made it use the skybox and diffusing the photo of sky.
 
 Ground is made of Heightmap, which decides the low and high of the ground by the grey and black color intensity, mor the black is the higher the ground area.</span>
 # 
-### How to Run Single Player Game With Code Provided:<a name="cs"></a>
+### How to Run Single Player Game with Code Provided:<a name="cs"></a>
 
 1)  Please Copy paste the single player Tank Fight folder into www directory of wamp server. Link to single player -> [Single Player](https://github.com/g00351263/Applied-Project-2019/tree/master/Tank%20Fight/Single%20Player)
 
-2) create database with the provided file of mysql in database folder(login and chat both have seperate database). Link to Database files ->
+2) create database with the provided file of MySQL in database folder(login and chat both have separate database). Link to Database files ->
 [Database Creator Files](https://github.com/g00351263/Applied-Project-2019/tree/master/database%20creators)
 
 2)  Go onto localhost/login
@@ -124,9 +124,9 @@ Ground is made of Heightmap, which decides the low and high of the ground by the
 
 2)  after that you can type <span style="color:red">node server.js</span> to run the server.
 
-3)  go onto any browser(chrome prefered) and type <span style="color:red">localhost:3000</span> you will see the game running.
+3)  go onto any browser(chrome preferred) and type <span style="color:red">localhost:3000</span> you will see the game running.
 
-4)  if you open multiple browsers, multiple instances can be seen on the browser and can be controlled indivdually.
+4)  if you open multiple browsers, multiple instances can be seen on the browser and can be controlled individually.
 
 # 
 ### Project Repository Includes: <a name="repo"></a>
@@ -138,3 +138,4 @@ Ground is made of Heightmap, which decides the low and high of the ground by the
 4)  Database creation folder. Link here -> [Database Creator Files](https://github.com/g00351263/Applied-Project-2019/tree/master/database%20creators)
 
 5)  Video for screencast available at -> [Video For Project](https://youtu.be/_oOI20k4gz8)
+
